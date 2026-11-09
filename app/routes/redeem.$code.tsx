@@ -52,6 +52,10 @@ function redeemCoupon(
     return { ok: false, error: "Coupon has already been redeemed" };
   }
 
+  if (coupon.voidedAt !== null) {
+    return { ok: false, error: "This seat's team licence was refunded" };
+  }
+
   const existingEnrollment = db
     .select()
     .from(enrollments)
@@ -135,11 +139,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   }
 
   const alreadyRedeemed = coupon.redeemedByUserId !== null;
+  // The team licence it came from was refunded.
+  const voided = coupon.voidedAt !== null;
   const alreadyEnrolled = isUserEnrolled(currentUserId, coupon.courseId);
 
   // Check country mismatch upfront so we can show a clear message
   let countryMismatch = false;
-  if (!alreadyRedeemed && !alreadyEnrolled) {
+  if (!alreadyRedeemed && !voided && !alreadyEnrolled) {
     const userCountry = await resolveCountry(request);
     const purchase = db
       .select()
@@ -155,6 +161,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     course: { id: course.id, title: course.title, slug: course.slug },
     code,
     alreadyRedeemed,
+    voided,
     alreadyEnrolled,
     countryMismatch,
   };
@@ -194,8 +201,14 @@ export default function Redeem({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { course, code, alreadyRedeemed, alreadyEnrolled, countryMismatch } =
-    loaderData;
+  const {
+    course,
+    code,
+    alreadyRedeemed,
+    voided,
+    alreadyEnrolled,
+    countryMismatch,
+  } = loaderData;
   const fetcher = useFetcher();
   const isSubmitting = fetcher.state !== "idle";
 
@@ -206,9 +219,6 @@ export default function Redeem({
       toast.error(error);
     }
   }, [fetcher.data, actionData]);
-
-  // Determine which state to show
-  const canRedeem = !alreadyRedeemed && !alreadyEnrolled && !countryMismatch;
 
   return (
     <div className="mx-auto max-w-2xl p-6 lg:p-8">
@@ -240,6 +250,16 @@ export default function Redeem({
               <p className="mt-2 text-sm text-muted-foreground">
                 Someone has already claimed this seat. Please ask the person who
                 shared this link for a new coupon.
+              </p>
+            </div>
+          ) : voided ? (
+            <div className="rounded-lg bg-destructive/10 p-4">
+              <div className="flex items-center justify-center gap-2 text-destructive">
+                <AlertCircle className="size-5" />
+                <span className="font-medium">This coupon can no longer be used</span>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                The team licence this seat came from was refunded.
               </p>
             </div>
           ) : alreadyEnrolled ? (

@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { getCurrentUserId, getDevCountry } from "~/lib/session";
 import { getCountryTierInfo, COUNTRIES } from "~/lib/ppp";
 import { eq, and, or, sql, desc } from "drizzle-orm";
+import { visibleProgress } from "~/lib/progress.server";
 import { db } from "~/db";
 import {
   users,
@@ -99,7 +100,8 @@ function calculateProgress(
         and(
           eq(lessonProgress.userId, userId),
           eq(lessonProgress.status, LessonProgressStatus.Completed),
-          or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!
+          or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!,
+          visibleProgress()
         )
       )
       .all();
@@ -120,7 +122,8 @@ function calculateProgress(
       and(
         eq(lessonProgress.userId, userId),
         eq(lessonProgress.status, LessonProgressStatus.Completed),
-        or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!
+        or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!,
+        visibleProgress()
       )
     )
     .get();
@@ -139,7 +142,8 @@ function getCompletedLessonCount(userId: number, courseId: number) {
       and(
         eq(lessonProgress.userId, userId),
         eq(lessonProgress.status, LessonProgressStatus.Completed),
-        or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!
+        or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!,
+        visibleProgress()
       )
     )
     .get();
@@ -164,7 +168,7 @@ function getRecentlyProgressedCourses(userId: number, limit: number = 3) {
     .innerJoin(lessons, eq(lessonProgress.lessonId, lessons.id))
     .innerJoin(modules, eq(lessons.moduleId, modules.id))
     .innerJoin(courses, eq(modules.courseId, courses.id))
-    .where(eq(lessonProgress.userId, userId))
+    .where(and(eq(lessonProgress.userId, userId), visibleProgress()))
     .groupBy(courses.id)
     .orderBy(desc(sql`max(${lessonProgress.id})`))
     .limit(limit)

@@ -22,6 +22,8 @@ import {
   RefundStatus,
 } from "~/db/schema";
 import { eq, and, or, sql, inArray, isNotNull } from "drizzle-orm";
+import { visibleProgress } from "~/lib/progress.server";
+import { getRefundNotice } from "~/lib/refunds.server";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -198,7 +200,8 @@ function calculateProgress(
         and(
           eq(lessonProgress.userId, userId),
           eq(lessonProgress.status, LessonProgressStatus.Completed),
-          or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!
+          or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!,
+          visibleProgress()
         )
       )
       .all();
@@ -219,7 +222,8 @@ function calculateProgress(
       and(
         eq(lessonProgress.userId, userId),
         eq(lessonProgress.status, LessonProgressStatus.Completed),
-        or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!
+        or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!,
+        visibleProgress()
       )
     )
     .get();
@@ -250,7 +254,8 @@ function getLessonProgressForCourse(userId: number, courseId: number) {
     .where(
       and(
         eq(lessonProgress.userId, userId),
-        or(...courseLessons.map((l) => eq(lessonProgress.lessonId, l.id)))!
+        or(...courseLessons.map((l) => eq(lessonProgress.lessonId, l.id)))!,
+        visibleProgress()
       )
     )
     .all();
@@ -281,7 +286,8 @@ function getNextIncompleteLesson(userId: number, courseId: number) {
         .where(
           and(
             eq(lessonProgress.userId, userId),
-            eq(lessonProgress.lessonId, lesson.id)
+            eq(lessonProgress.lessonId, lesson.id),
+            visibleProgress()
           )
         )
         .get();
@@ -518,9 +524,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   let lessonProgressMap: Record<number, string> = {};
   let nextLessonId: number | null = null;
   let refundOffer: { amount: number; lastDayInWindow: string } | null = null;
+  let refundNotice: ReturnType<typeof getRefundNotice> = null;
 
   if (currentUserId) {
     enrolled = isUserEnrolled(currentUserId, course.id);
+    refundNotice = getRefundNotice(db, currentUserId, course.id);
 
     if (enrolled) {
       refundOffer = getRefundOffer(currentUserId, { id: course.id });
@@ -568,6 +576,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     ratingSummary,
     userRating,
     refundOffer,
+    refundNotice,
   };
 }
 
@@ -669,6 +678,7 @@ export default function CourseDetail({ loaderData }: Route.ComponentProps) {
     ratingSummary,
     userRating,
     refundOffer,
+    refundNotice,
   } = loaderData;
   const isInstructor = currentUserId === course.instructorId;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -862,6 +872,9 @@ export default function CourseDetail({ loaderData }: Route.ComponentProps) {
               </h2>
             </CardHeader>
             <CardContent className="space-y-4">
+              {!isInstructor && refundNotice && (
+                <RefundNoticeLine notice={refundNotice} enrolled={enrolled} />
+              )}
               {isInstructor ? (
                 <Link to={`/instructor/${course.id}`}>
                   <Button className="w-full">
@@ -944,6 +957,28 @@ export default function CourseDetail({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+function RefundNoticeLine({
+  notice,
+  enrolled,
+}: {
+  notice: NonNullable<Route.ComponentProps["loaderData"]["refundNotice"]>;
+  enrolled: boolean;
+}) {
+  if (notice.kind === "refund") {
+    // Only relevant while they haven't bought the course again.
+    if (enrolled) return null;
+    return (
+      <p className="rounded-md bg-muted px-3 py-2 text-sm">{notice.message}</p>
+    );
+  }
+
+  return (
+    <p className="rounded-md bg-muted px-3 py-2 text-sm">
+      Your refund request was declined: {notice.reason}
+    </p>
   );
 }
 

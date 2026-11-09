@@ -55,3 +55,6 @@ export const db = /* @__PURE__ */ new Proxy({} as ReturnType<typeof getDb>, {
     return typeof value === "function" ? value.bind(target) : value;
   },
 });
+
+/** The database handle services take, so tests can pass an in-memory one. */
+export type Db = Omit<ReturnType<typeof drizzle<typeof schema>>, "$client">;

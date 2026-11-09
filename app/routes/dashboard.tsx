@@ -10,6 +10,7 @@ import {
   LessonProgressStatus,
 } from "~/db/schema";
 import { eq, and, or, sql } from "drizzle-orm";
+import { visibleProgress } from "~/lib/progress.server";
 import { getCurrentUserId } from "~/lib/session";
 import { Card, CardContent, CardFooter, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -61,7 +62,8 @@ function getLessonProgress(userId: number, lessonId: number) {
     .where(
       and(
         eq(lessonProgress.userId, userId),
-        eq(lessonProgress.lessonId, lessonId)
+        eq(lessonProgress.lessonId, lessonId),
+        visibleProgress()
       )
     )
     .get();
@@ -100,7 +102,8 @@ function calculateProgress(
         and(
           eq(lessonProgress.userId, userId),
           eq(lessonProgress.status, LessonProgressStatus.Completed),
-          or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!
+          or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!,
+          visibleProgress()
         )
       )
       .all();
@@ -121,7 +124,8 @@ function calculateProgress(
       and(
         eq(lessonProgress.userId, userId),
         eq(lessonProgress.status, LessonProgressStatus.Completed),
-        or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!
+        or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!,
+        visibleProgress()
       )
     )
     .get();
@@ -140,7 +144,8 @@ function getCompletedLessonCount(userId: number, courseId: number) {
       and(
         eq(lessonProgress.userId, userId),
         eq(lessonProgress.status, LessonProgressStatus.Completed),
-        or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!
+        or(...lessonIds.map((id) => eq(lessonProgress.lessonId, id)))!,
+        visibleProgress()
       )
     )
     .get();

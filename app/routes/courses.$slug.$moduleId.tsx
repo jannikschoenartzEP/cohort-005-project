@@ -13,6 +13,7 @@ import {
   LessonProgressStatus,
 } from "~/db/schema";
 import { and, eq, or } from "drizzle-orm";
+import { visibleProgress } from "~/lib/progress.server";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -146,7 +147,8 @@ function getLessonProgressForCourse(userId: number, courseId: number) {
     .where(
       and(
         eq(lessonProgress.userId, userId),
-        or(...courseLessons.map((l) => eq(lessonProgress.lessonId, l.id)))!
+        or(...courseLessons.map((l) => eq(lessonProgress.lessonId, l.id)))!,
+        visibleProgress()
       )
     )
     .all();

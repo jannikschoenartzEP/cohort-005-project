@@ -1,4 +1,5 @@
-import { Link, redirect } from "react-router";
+import { Form, Link, redirect } from "react-router";
+import { z } from "zod";
 import type { Route } from "./+types/courses.$slug.welcome";
 import { db } from "~/db";
 import {
@@ -8,7 +9,10 @@ import {
   modules,
   lessons,
   enrollments,
+  ProgressChoice,
 } from "~/db/schema";
+import { chooseProgress, needsProgressChoice } from "~/lib/progress.server";
+import { parseFormData, parseParams } from "~/lib/validation";
 import { eq, and, or } from "drizzle-orm";
 import { getCurrentUserId } from "~/lib/session";
 import { Button } from "~/components/ui/button";
@@ -123,11 +127,48 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   return {
     course: courseWithDetails,
     discordInviteUrl,
+    askProgressChoice: needsProgressChoice(db, currentUserId, course.id),
   };
 }
 
+const welcomeParamsSchema = z.object({ slug: z.string().min(1) });
+
+const progressChoiceSchema = z.object({
+  progressChoice: z.nativeEnum(ProgressChoice),
+});
+
+export async function action({ params, request }: Route.ActionArgs) {
+  const { slug } = parseParams(params, welcomeParamsSchema);
+  const course = getCourseBySlug(slug);
+  if (!course) {
+    throw data("Course not found.", { status: 404 });
+  }
+
+  const currentUserId = await getCurrentUserId(request);
+  if (!currentUserId) {
+    throw data("Select a user from the DevUI panel.", { status: 401 });
+  }
+
+  // Asked once: a learner who has already chosen can't change their mind here.
+  if (!needsProgressChoice(db, currentUserId, course.id)) {
+    throw redirect(`/courses/${slug}/welcome`);
+  }
+
+  const parsed = parseFormData(await request.formData(), progressChoiceSchema);
+  if (!parsed.success) {
+    throw data("Pick Continuing or Starting Over.", { status: 400 });
+  }
+
+  chooseProgress(db, currentUserId, course.id, parsed.data.progressChoice);
+  throw redirect(`/courses/${slug}/welcome`);
+}
+
 export default function Welcome({ loaderData }: Route.ComponentProps) {
-  const { course, discordInviteUrl } = loaderData;
+  const { course, discordInviteUrl, askProgressChoice } = loaderData;
+
+  if (askProgressChoice) {
+    return <ProgressChoicePrompt courseTitle={course.title} />;
+  }
 
   const firstLessonId =
     course.modules.length > 0 && course.modules[0].lessons.length > 0
@@ -183,6 +224,42 @@ export default function Welcome({ loaderData }: Route.ComponentProps) {
               </Link>
             )}
           </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ProgressChoicePrompt({ courseTitle }: { courseTitle: string }) {
+  return (
+    <div className="mx-auto max-w-2xl p-6 lg:p-8">
+      <Card>
+        <CardContent className="p-8 text-center">
+          <h1 className="mb-2 text-3xl font-bold">Welcome back to {courseTitle}!</h1>
+          <p className="mb-8 text-lg text-muted-foreground">
+            You've been here before. Pick up where you left off, or start over
+            with a clean slate? You only get asked once.
+          </p>
+          <Form method="post" className="flex flex-col items-center gap-3">
+            <Button
+              size="lg"
+              className="w-full max-w-sm"
+              name="progressChoice"
+              value={ProgressChoice.Continuing}
+              autoFocus
+            >
+              Continue where I left off
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full max-w-sm"
+              name="progressChoice"
+              value={ProgressChoice.StartingOver}
+            >
+              Start over
+            </Button>
+          </Form>
         </CardContent>
       </Card>
     </div>

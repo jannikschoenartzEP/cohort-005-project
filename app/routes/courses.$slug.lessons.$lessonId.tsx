@@ -29,6 +29,7 @@ import {
   UserRole,
 } from "~/db/schema";
 import { and, asc, desc, eq, or, sql } from "drizzle-orm";
+import { visibleProgress } from "~/lib/progress.server";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import {
@@ -209,7 +210,8 @@ function getLessonProgressForCourse(userId: number, courseId: number) {
     .where(
       and(
         eq(lessonProgress.userId, userId),
-        or(...courseLessons.map((l) => eq(lessonProgress.lessonId, l.id)))!
+        or(...courseLessons.map((l) => eq(lessonProgress.lessonId, l.id)))!,
+        visibleProgress()
       )
     )
     .all();
@@ -733,10 +735,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     if (enrolled) {
       // Mark lesson as in-progress when viewed
       markLessonInProgress(currentUserId, lessonId);
-      const progress = getLessonProgress(currentUserId, lessonId);
-      lessonStatus = progress?.status ?? null;
 
-      // Get progress for all lessons in course (for curriculum sidebar)
+      // Get progress for all lessons in course (for curriculum sidebar).
+      // Only what the learner may see — Starting Over hides earlier rows.
       const progressRecords = getLessonProgressForCourse(
         currentUserId,
         course.id
@@ -744,6 +745,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       for (const record of progressRecords) {
         lessonProgressMap[record.lessonId] = record.status;
       }
+      lessonStatus = lessonProgressMap[lessonId] ?? null;
 
       // Get video watch state for resume and progress display
       if (lesson.videoUrl) {

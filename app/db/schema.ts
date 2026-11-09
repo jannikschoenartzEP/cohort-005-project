@@ -37,6 +37,27 @@ export enum RefundStatus {
   Declined = "declined",
 }
 
+/** Where the money of an approved Refund Request has got to. */
+export enum RefundState {
+  Pending = "pending",
+  Issued = "issued",
+  Failed = "failed",
+}
+
+/** Why a Reviewer declined a Refund Request. The learner sees it. */
+export enum DeclineReason {
+  TooMuchCompleted = "too_much_completed",
+  MatchesDescription = "matches_description",
+  Duplicate = "duplicate",
+  Other = "other",
+}
+
+/** A returning learner's choice about progress from before a Refund. */
+export enum ProgressChoice {
+  Continuing = "continuing",
+  StartingOver = "starting_over",
+}
+
 export enum TeamMemberRole {
   Admin = "admin",
   Member = "member",
@@ -132,6 +153,9 @@ export const enrollments = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
     completedAt: text("completed_at"),
+    // Null until a learner who comes back after a Refund picks one. Starting
+    // Over hides progress last touched before enrolledAt (ADR 0001).
+    progressChoice: text("progress_choice").$type<ProgressChoice>(),
   },
   (table) => [index("enrollments_course_idx").on(table.courseId)]
 );
@@ -148,6 +172,10 @@ export const lessonProgress = sqliteTable(
       .references(() => lessons.id),
     status: text("status").notNull().$type<LessonProgressStatus>(),
     completedAt: text("completed_at"),
+    // Set on every write. Null on rows from before the column existed.
+    updatedAt: text("updated_at")
+      .$defaultFn(() => new Date().toISOString())
+      .$onUpdateFn(() => new Date().toISOString()),
   },
   (table) => [
     index("lesson_progress_user_lesson_idx").on(table.userId, table.lessonId),
@@ -249,6 +277,18 @@ export const refunds = sqliteTable(
       .$defaultFn(() => new Date().toISOString()),
     resolvedAt: text("resolved_at"),
     resolvedByUserId: integer("resolved_by_user_id").references(() => users.id),
+    // Set on decline. Other needs declineReasonText.
+    declineReason: text("decline_reason").$type<DeclineReason>(),
+    declineReasonText: text("decline_reason_text"),
+    // Set to Pending on approval. Null for open and declined requests.
+    refundState: text("refund_state").$type<RefundState>(),
+    // Internal only — never shown to the learner.
+    failedNote: text("failed_note"),
+    // Who last moved the Refund to Issued, Failed or back to Pending, and when.
+    refundStateChangedAt: text("refund_state_changed_at"),
+    refundStateChangedByUserId: integer(
+      "refund_state_changed_by_user_id"
+    ).references(() => users.id),
   },
   (table) => [index("refunds_purchase_idx").on(table.purchaseId)]
 );
@@ -288,6 +328,9 @@ export const coupons = sqliteTable("coupons", {
     .references(() => purchases.id),
   redeemedByUserId: integer("redeemed_by_user_id").references(() => users.id),
   redeemedAt: text("redeemed_at"),
+  // Set when the team licence it came from is refunded. A void seat cannot be
+  // claimed.
+  voidedAt: text("voided_at"),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
