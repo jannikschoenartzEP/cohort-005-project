@@ -4,4 +4,4 @@ A purchasing-power price is only fair in the country it was given for. So every 
 
 ## Consequences
 
-A purchase made before this column existed has no country, and there is no way to recover it. Platform Admins, and the Instructor who owns the course, are exempt from the country check.
+A purchase made before this column existed has no country, and there is no way to recover it.
