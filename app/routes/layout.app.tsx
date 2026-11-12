@@ -1,4 +1,9 @@
-import { Outlet } from "react-router";
+import { Outlet, useSearchParams } from "react-router";
+// PROTOTYPE — Notification feed variants (throwaway branch only)
+import { VariantABell } from "~/components/notification-feed-prototype/variant-a";
+import { VariantBTopBar } from "~/components/notification-feed-prototype/variant-b";
+import { VariantCNavItem, VariantCPanel } from "~/components/notification-feed-prototype/variant-c";
+import { NotificationPrototypeControls } from "~/components/notification-feed-prototype/controls";
 import type { Route } from "./+types/layout.app";
 import { Sidebar } from "~/components/sidebar";
 import { DevUI } from "~/components/dev-ui";
@@ -226,6 +231,9 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
     countries,
     isTeamAdmin: userIsTeamAdmin,
   } = loaderData;
+  const [searchParams] = useSearchParams();
+  const variant = searchParams.get("variant") ?? "A";
+  const showBell = !!currentUser;
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -233,10 +241,23 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
         currentUser={currentUser}
         recentCourses={recentCourses}
         isTeamAdmin={userIsTeamAdmin}
+        headerSlot={showBell && variant === "A" ? <VariantABell /> : undefined}
+        navTopSlot={showBell && variant === "C" ? <VariantCNavItem /> : undefined}
       />
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
+      {showBell && variant === "C" && <VariantCPanel />}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {showBell && variant === "B" && <VariantBTopBar />}
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
+      {showBell && (
+        <NotificationPrototypeControls
+          variant={variant}
+          role={currentUser.role}
+          isTeamAdmin={userIsTeamAdmin}
+        />
+      )}
       <DevUI
         users={users}
         currentUser={currentUser}
