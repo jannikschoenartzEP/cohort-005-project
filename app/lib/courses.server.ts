@@ -37,6 +37,10 @@ export function changeCourseStatus(
     return { success: false, error: "Course not found." };
   }
 
+  if (course.instructorId === platformAdminId) {
+    return { success: true, notifications: [] };
+  }
+
   const instructor = getPerson(db, course.instructorId);
   const platformAdmin = getPerson(db, platformAdminId);
   if (!instructor) {

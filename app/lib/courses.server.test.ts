@@ -54,4 +54,46 @@ describe("changing a course's status", () => {
       ],
     });
   });
+
+  it.each([
+    [CourseStatus.Draft, CourseStatus.Published, "A Platform Admin moved to draft Test Course"],
+    [CourseStatus.Archived, CourseStatus.Draft, "A Platform Admin archived Test Course"],
+  ])("titles a move to %s", (status, from, title) => {
+    db.update(schema.courses)
+      .set({ status: from })
+      .where(eq(schema.courses.id, base.course.id))
+      .run();
+
+    const result = changeCourseStatus(db, base.course.id, status, platformAdmin.id, NOW);
+
+    expect(result.success && result.notifications.map((n) => n.title)).toEqual([title]);
+  });
+
+  it("stores the new status", () => {
+    changeCourseStatus(db, base.course.id, CourseStatus.Archived, platformAdmin.id, NOW);
+
+    const course = db
+      .select()
+      .from(schema.courses)
+      .where(eq(schema.courses.id, base.course.id))
+      .get();
+    expect(course?.status).toBe(CourseStatus.Archived);
+  });
+
+  it("doesn't notify a Platform Admin who is the course's Instructor", () => {
+    db.update(schema.courses)
+      .set({ instructorId: platformAdmin.id })
+      .where(eq(schema.courses.id, base.course.id))
+      .run();
+
+    const result = changeCourseStatus(
+      db,
+      base.course.id,
+      CourseStatus.Published,
+      platformAdmin.id,
+      NOW
+    );
+
+    expect(result).toEqual({ success: true, notifications: [] });
+  });
 });
