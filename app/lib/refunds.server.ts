@@ -406,7 +406,7 @@ export function raiseRefundRequest(
   const notifications: Notification[] = platformAdmins.map((admin) => ({
     kind: "refund-request-raised",
     recipient: { id: admin.id, name: admin.name, email: admin.email },
-    actorId: buyer.id,
+    actor: { id: buyer.id, name: buyer.name, email: buyer.email },
     title: `${buyer.name} asked for a refund`,
     body: `${course.title}, ${formatPrice(purchase.amountPaid)}`,
     link: "/admin/refunds",

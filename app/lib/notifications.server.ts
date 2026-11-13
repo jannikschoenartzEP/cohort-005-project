@@ -14,7 +14,8 @@ export type Recipient = { id: number; name: string; email: string };
 export type Notification = {
   kind: NotificationKind;
   recipient: Recipient;
-  actorId: number | null;
+  // Sent inline: Knock rejects an actor id it has never seen.
+  actor: Recipient | null;
   title: string;
   body?: string;
   link: string;
@@ -36,7 +37,10 @@ export function knockTransport(apiKey: string): NotificationTransport {
             email: n.recipient.email,
           },
         ],
-        actor: n.actorId === null ? undefined : String(n.actorId),
+        actor:
+          n.actor === null
+            ? undefined
+            : { id: String(n.actor.id), name: n.actor.name, email: n.actor.email },
         data: { title: n.title, body: n.body ?? "", link: n.link },
       });
     },
