@@ -67,11 +67,24 @@ export function knockTransport(knock: KnockWorkflows): NotificationTransport {
  */
 export async function notify(
   notifications: Notification[],
-  transport: NotificationTransport = defaultTransport()
+  transport?: NotificationTransport
 ): Promise<void> {
+  if (notifications.length === 0) return;
+
+  let chosen: NotificationTransport;
+  try {
+    chosen = transport ?? defaultTransport();
+  } catch (error) {
+    console.error(
+      `[notifications] Failed to set up sending; dropped ${notifications.length} Notification(s):`,
+      error
+    );
+    return;
+  }
+
   for (const notification of notifications) {
     try {
-      await transport.send(notification);
+      await chosen.send(notification);
     } catch (error) {
       console.error(
         `[notifications] Failed to send ${notification.kind} to user ${notification.recipient.id}:`,

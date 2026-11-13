@@ -13,6 +13,20 @@ import {
   type NotificationTransport,
 } from "./notifications.server";
 
+// Lets a test make the Knock client fail to build, as it would with a bad
+// configuration.
+const knockClient = vi.hoisted(() => ({ failToBuild: false }));
+vi.mock("@knocklabs/node", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@knocklabs/node")>();
+  class Knock extends actual.default {
+    constructor(...args: ConstructorParameters<typeof actual.default>) {
+      if (knockClient.failToBuild) throw new Error("Invalid Knock options");
+      super(...args);
+    }
+  }
+  return { ...actual, default: Knock };
+});
+
 const pat = { id: 7, name: "Pat Admin", email: "pat@example.com" };
 const liam = { id: 3, name: "Liam Thompson", email: "liam@example.com" };
 
@@ -79,6 +93,21 @@ describe("notify", () => {
     expect(sent).toEqual([toAlex]);
     expect(error).toHaveBeenCalledOnce();
     error.mockRestore();
+  });
+
+  it("never throws, even when the Knock client can't be built", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubEnv("KNOCK_API_KEY", "sk_test_123");
+    knockClient.failToBuild = true;
+
+    try {
+      await expect(notify([raised])).resolves.toBeUndefined();
+      expect(error).toHaveBeenCalled();
+    } finally {
+      knockClient.failToBuild = false;
+      vi.unstubAllEnvs();
+      error.mockRestore();
+    }
   });
 
   it("writes each Notification to a local folder when there is no Knock API key", async () => {
