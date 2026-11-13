@@ -97,4 +97,55 @@ describe("createComment", () => {
 
     expect(result).toEqual({ success: false, error: "Lesson not found" });
   });
+
+  describe("Replies", () => {
+    function postQuestion(lessonId: number) {
+      const result = createComment(testDb, {
+        userId: base.user.id,
+        lessonId,
+        parentId: null,
+        body: "A question",
+      });
+      if (!result.success) throw new Error(result.error);
+      return result.comment;
+    }
+
+    it("creates a Reply to a top-level Comment", () => {
+      const question = postQuestion(lesson.id);
+
+      const result = createComment(testDb, {
+        userId: base.instructor.id,
+        lessonId: lesson.id,
+        parentId: question.id,
+        body: "An answer",
+      });
+
+      expect(result).toMatchObject({
+        success: true,
+        comment: {
+          userId: base.instructor.id,
+          lessonId: lesson.id,
+          parentId: question.id,
+          body: "An answer",
+        },
+      });
+    });
+
+    it("rejects a Reply whose parent is on a different lesson", () => {
+      const otherLesson = seedLesson(testDb, base.course.id, "Other");
+      const question = postQuestion(otherLesson.id);
+
+      const result = createComment(testDb, {
+        userId: base.instructor.id,
+        lessonId: lesson.id,
+        parentId: question.id,
+        body: "An answer",
+      });
+
+      expect(result).toEqual({
+        success: false,
+        error: "Parent comment belongs to a different lesson",
+      });
+    });
+  });
 });

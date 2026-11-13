@@ -44,6 +44,23 @@ export function createComment(
     return { success: false, error: "Lesson not found" };
   }
 
+  if (input.parentId !== null) {
+    const parent = db
+      .select()
+      .from(comments)
+      .where(eq(comments.id, input.parentId))
+      .get();
+    if (!parent) {
+      return { success: false, error: "Parent comment not found" };
+    }
+    if (parent.lessonId !== input.lessonId) {
+      return {
+        success: false,
+        error: "Parent comment belongs to a different lesson",
+      };
+    }
+  }
+
   const comment = db
     .insert(comments)
     .values({
