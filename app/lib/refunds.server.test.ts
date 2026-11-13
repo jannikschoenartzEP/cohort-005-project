@@ -434,6 +434,73 @@ describe("approving a Refund Request", () => {
     expect(result.email.subject).toBe("Refund approved — Test Course");
     expect(result.email.body).toContain("$79.00");
   });
+
+  it("notifies the buyer of an Individual Purchase that their Enrollment has ended", () => {
+    const purchase = buyForSelf(base.user.id);
+    const id = raise(purchase.id, base.user.id);
+
+    const result = approveRefundRequest(db, id, platformAdmin.id, null, NOW);
+
+    if (!result.ok) throw new Error(result.error);
+    expect(result.notifications).toEqual([
+      {
+        kind: "refund-request-approved",
+        recipient: { id: base.user.id, name: "Test User", email: "test@example.com" },
+        actor: { id: platformAdmin.id, name: "Pat Admin", email: "pat@example.com" },
+        title: "Your Refund Request for Test Course was approved",
+        body: "You'll get back €79.00. Your Enrollment on this course has ended.",
+        link: "/courses/test-course",
+      },
+    ]);
+  });
+
+  it("doesn't tell a buyer who keeps access through a Claimed Seat that their Enrollment ended", () => {
+    const priya = addLearner("Priya");
+    const { seats } = buySeats(priya.id, 2);
+    claimSeat(seats[0].id, base.user.id);
+    const purchase = db
+      .insert(schema.purchases)
+      .values({
+        userId: base.user.id,
+        courseId: base.course.id,
+        amountPaid: 4900,
+        createdAt: daysBefore(2),
+      })
+      .returning()
+      .get();
+    const id = raise(purchase.id, base.user.id);
+
+    const result = approveRefundRequest(db, id, platformAdmin.id, null, NOW);
+
+    if (!result.ok) throw new Error(result.error);
+    expect(result.notifications).toMatchObject([
+      {
+        kind: "refund-request-approved",
+        body: "You'll get back €49.00.",
+        link: "/courses/test-course",
+      },
+    ]);
+  });
+
+  it("tells a Team Admin their Unclaimed Seats can no longer be claimed", () => {
+    const priya = addLearner("Priya");
+    const { purchase } = buySeats(priya.id, 2);
+    const id = raise(purchase.id, priya.id);
+
+    const result = approveRefundRequest(db, id, platformAdmin.id, null, NOW);
+
+    if (!result.ok) throw new Error(result.error);
+    expect(result.notifications).toEqual([
+      {
+        kind: "refund-request-approved",
+        recipient: { id: priya.id, name: "Priya", email: "priya@example.com" },
+        actor: { id: platformAdmin.id, name: "Pat Admin", email: "pat@example.com" },
+        title: "Your Refund Request for Test Course was approved",
+        body: "You'll get back €158.00. Its Unclaimed Seats can no longer be claimed.",
+        link: "/team",
+      },
+    ]);
+  });
 });
 
 describe("declining a Refund Request", () => {
@@ -474,6 +541,44 @@ describe("declining a Refund Request", () => {
     declineRefundRequest(db, id, platformAdmin.id, "Seats are in use.", NOW);
 
     expect(getSeatAvailability(db, getSeat(seats[0].id))).toBe("available");
+  });
+
+  it("notifies the buyer with the decision note", () => {
+    const purchase = buyForSelf(base.user.id);
+    const id = raise(purchase.id, base.user.id);
+
+    const result = declineRefundRequest(
+      db,
+      id,
+      platformAdmin.id,
+      "  You finished the course.  ",
+      NOW
+    );
+
+    if (!result.ok) throw new Error(result.error);
+    expect(result.notifications).toEqual([
+      {
+        kind: "refund-request-declined",
+        recipient: { id: base.user.id, name: "Test User", email: "test@example.com" },
+        actor: { id: platformAdmin.id, name: "Pat Admin", email: "pat@example.com" },
+        title: "Your Refund Request for Test Course was declined",
+        body: "You finished the course. You can raise a new Refund Request.",
+        link: "/courses/test-course",
+      },
+    ]);
+  });
+
+  it("links a Team Admin's declined Notification to the team page", () => {
+    const priya = addLearner("Priya");
+    const { purchase } = buySeats(priya.id, 1);
+    const id = raise(purchase.id, priya.id);
+
+    const result = declineRefundRequest(db, id, platformAdmin.id, "Seats are in use.", NOW);
+
+    if (!result.ok) throw new Error(result.error);
+    expect(result.notifications).toMatchObject([
+      { kind: "refund-request-declined", recipient: { id: priya.id }, link: "/team" },
+    ]);
   });
 });
 
