@@ -198,6 +198,41 @@ describe("raising a Refund Request", () => {
     ]);
   });
 
+  it("leaves the buyer out of the Notifications, even when they are a Platform Admin", () => {
+    const buyer = db
+      .insert(schema.users)
+      .values({ name: "Sam Admin", email: "sam@example.com", role: UserRole.Admin })
+      .returning()
+      .get();
+    const { purchase } = buySeats(buyer.id, 3);
+
+    const result = raiseRefundRequest(db, purchase.id, buyer.id, "Nope.", NOW);
+
+    if (!result.ok) throw new Error(result.error);
+    expect(result.notifications).toEqual([
+      {
+        kind: "refund-request-raised",
+        recipient: { id: platformAdmin.id, name: "Pat Admin", email: "pat@example.com" },
+        actor: { id: buyer.id, name: "Sam Admin", email: "sam@example.com" },
+        title: "New Refund Request for Test Course",
+        body: "Sam Admin asked for €237.00 back on their Team Licence.",
+        link: "/admin/refunds",
+      },
+    ]);
+  });
+
+  it("notifies nobody when the Refund Request can't be raised", () => {
+    const purchase = buyForSelf(base.user.id, 15);
+
+    const result = raiseRefundRequest(db, purchase.id, base.user.id, "Nope.", NOW);
+
+    expect(result).toEqual({
+      ok: false,
+      status: 403,
+      error: "The 14-day window has closed.",
+    });
+  });
+
   it("refuses anyone but the buyer", () => {
     const purchase = buyForSelf(base.user.id);
     const someoneElse = addLearner("Ben");
