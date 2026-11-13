@@ -1,6 +1,7 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import * as schema from "~/db/schema";
-import { comments } from "~/db/schema";
+import { comments, lessons } from "~/db/schema";
+import { eq } from "drizzle-orm";
 import { MAX_COMMENT_LENGTH, MIN_COMMENT_LENGTH } from "./comments";
 
 type Db = BetterSQLite3Database<typeof schema>;
@@ -32,6 +33,15 @@ export function createComment(
       success: false,
       error: `Comment must be ${MAX_COMMENT_LENGTH} characters or fewer`,
     };
+  }
+
+  const lesson = db
+    .select({ id: lessons.id })
+    .from(lessons)
+    .where(eq(lessons.id, input.lessonId))
+    .get();
+  if (!lesson) {
+    return { success: false, error: "Lesson not found" };
   }
 
   const comment = db

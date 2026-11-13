@@ -86,4 +86,15 @@ describe("createComment", () => {
 
     expect(result.success).toBe(true);
   });
+
+  it("rejects a Comment on a lesson that does not exist", () => {
+    const result = createComment(testDb, {
+      userId: base.user.id,
+      lessonId: 9999,
+      parentId: null,
+      body: "Hello?",
+    });
+
+    expect(result).toEqual({ success: false, error: "Lesson not found" });
+  });
 });
