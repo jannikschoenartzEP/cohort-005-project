@@ -2,9 +2,10 @@ import "~/lib/env.server";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import Knock, { signUserToken } from "@knocklabs/node";
-import type { Notification } from "~/lib/notifications";
+import type { KnockFeedCredentials, Notification } from "~/lib/notifications";
 
 export type {
+  KnockFeedCredentials,
   Notification,
   NotificationKind,
   NotificationPerson,
@@ -110,14 +111,6 @@ export function chooseTransport(
 function defaultTransport(): NotificationTransport {
   return chooseTransport(process.env);
 }
-
-/** What the browser needs to open a person's Knock feed. */
-export type KnockFeedCredentials = {
-  knockPublicKey: string;
-  knockFeedChannelId: string;
-  knockUserId: string;
-  knockUserToken: string;
-};
 
 type KnockFeedEnv = {
   KNOCK_PUBLIC_KEY?: string;
