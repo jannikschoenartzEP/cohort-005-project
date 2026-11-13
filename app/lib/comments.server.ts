@@ -1,6 +1,7 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import * as schema from "~/db/schema";
 import { comments } from "~/db/schema";
+import { MAX_COMMENT_LENGTH, MIN_COMMENT_LENGTH } from "./comments";
 
 type Db = BetterSQLite3Database<typeof schema>;
 
@@ -22,13 +23,24 @@ export function createComment(
     body: string;
   }
 ): CreateCommentResult {
+  const body = input.body.trim();
+  if (body.length < MIN_COMMENT_LENGTH) {
+    return { success: false, error: "Comment cannot be empty" };
+  }
+  if (body.length > MAX_COMMENT_LENGTH) {
+    return {
+      success: false,
+      error: `Comment must be ${MAX_COMMENT_LENGTH} characters or fewer`,
+    };
+  }
+
   const comment = db
     .insert(comments)
     .values({
       userId: input.userId,
       lessonId: input.lessonId,
       parentId: input.parentId,
-      body: input.body.trim(),
+      body,
     })
     .returning()
     .get();

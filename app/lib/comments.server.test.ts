@@ -47,4 +47,43 @@ describe("createComment", () => {
       },
     });
   });
+
+  it("rejects a body that is only whitespace", () => {
+    const result = createComment(testDb, {
+      userId: base.user.id,
+      lessonId: lesson.id,
+      parentId: null,
+      body: "   ",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Comment cannot be empty",
+    });
+  });
+
+  it("rejects a body longer than 5000 characters", () => {
+    const result = createComment(testDb, {
+      userId: base.user.id,
+      lessonId: lesson.id,
+      parentId: null,
+      body: "a".repeat(5001),
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Comment must be 5000 characters or fewer",
+    });
+  });
+
+  it("accepts a body of exactly 5000 characters", () => {
+    const result = createComment(testDb, {
+      userId: base.user.id,
+      lessonId: lesson.id,
+      parentId: null,
+      body: "a".repeat(5000),
+    });
+
+    expect(result.success).toBe(true);
+  });
 });
