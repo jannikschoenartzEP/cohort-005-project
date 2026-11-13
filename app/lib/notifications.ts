@@ -17,6 +17,11 @@ export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 export type NotificationPerson = { id: number; name: string; email: string };
 
+/** A user (or any row with their id, name and email) as a NotificationPerson. */
+export function personOf(user: NotificationPerson): NotificationPerson {
+  return { id: user.id, name: user.name, email: user.email };
+}
+
 export type Notification = {
   kind: NotificationKind;
   recipient: NotificationPerson;

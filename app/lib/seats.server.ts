@@ -1,8 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import { coupons, courses, enrollments, purchases, users } from "~/db/schema";
 import type { Db } from "~/db";
-import type { Notification } from "~/lib/notifications";
-import { getSeatAvailability, personOf } from "~/lib/refunds.server";
+import { personOf, type Notification } from "~/lib/notifications";
+import { getSeatAvailability } from "~/lib/refunds.server";
 
 // ─── Seats ───
 // A Student claiming a Seat on a Team Licence. See GLOSSARY.md (Seat, Claimed

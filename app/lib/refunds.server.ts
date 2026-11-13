@@ -16,7 +16,7 @@ import {
   RefundStatus,
   UserRole,
 } from "~/db/schema";
-import type { Notification, NotificationPerson } from "~/lib/notifications";
+import { personOf, type Notification } from "~/lib/notifications";
 import { formatPrice } from "~/lib/utils";
 import {
   REFUND_COMPLETION_LIMIT,
@@ -437,10 +437,6 @@ const PURCHASE_KIND_NAMES: Record<PurchaseKind, string> = {
   individual_purchase: "Individual Purchase",
   team_licence: "Team Licence",
 };
-
-export function personOf(user: typeof users.$inferSelect): NotificationPerson {
-  return { id: user.id, name: user.name, email: user.email };
-}
 
 // ─── Listing Refund Requests ───
 

@@ -1,7 +1,7 @@
 import type { Db } from "~/db";
 import { comments, courses, lessons, modules, users } from "~/db/schema";
 import { eq } from "drizzle-orm";
-import type { Notification, NotificationPerson } from "~/lib/notifications";
+import { personOf, type Notification } from "~/lib/notifications";
 import {
   MAX_COMMENT_LENGTH,
   MIN_COMMENT_LENGTH,
@@ -122,10 +122,6 @@ function getUser(db: Db, userId: number): User {
   const user = db.select().from(users).where(eq(users.id, userId)).get();
   if (!user) throw new Error(`User ${userId} not found`);
   return user;
-}
-
-function personOf(user: User): NotificationPerson {
-  return { id: user.id, name: user.name, email: user.email };
 }
 
 const PREVIEW_LENGTH = 140;

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "~/db";
 import { CourseStatus, courses, users } from "~/db/schema";
-import type { Notification, NotificationPerson } from "~/lib/notifications";
+import { personOf, type Notification } from "~/lib/notifications";
 
 // ─── Courses ───
 // Platform Admin changes to a course. Database first, Notifications returned
@@ -49,8 +49,8 @@ export function changeCourseStatus(
     return { ok: true, notifications: [] };
   }
 
-  const instructor = getPerson(db, course.instructorId);
-  const platformAdmin = getPerson(db, platformAdminId);
+  const instructor = getUser(db, course.instructorId);
+  const platformAdmin = getUser(db, platformAdminId);
   if (!instructor) {
     return { ok: true, notifications: [] };
   }
@@ -60,8 +60,8 @@ export function changeCourseStatus(
     notifications: [
       {
         kind: "course-status-changed",
-        recipient: instructor,
-        actor: platformAdmin ?? null,
+        recipient: personOf(instructor),
+        actor: platformAdmin ? personOf(platformAdmin) : null,
         title: `A Platform Admin ${STATUS_VERBS[status]} ${course.title}`,
         link: `/instructor/${course.id}`,
       },
@@ -69,10 +69,6 @@ export function changeCourseStatus(
   };
 }
 
-function getPerson(db: Db, userId: number): NotificationPerson | undefined {
-  return db
-    .select({ id: users.id, name: users.name, email: users.email })
-    .from(users)
-    .where(eq(users.id, userId))
-    .get();
+function getUser(db: Db, userId: number) {
+  return db.select().from(users).where(eq(users.id, userId)).get();
 }

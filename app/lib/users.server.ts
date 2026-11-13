@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "~/db";
 import { UserRole, users } from "~/db/schema";
-import type { Notification, NotificationPerson } from "~/lib/notifications";
+import { personOf, type Notification } from "~/lib/notifications";
 
 // ─── Users ───
 // Platform Admin changes to a user. Database first, Notifications returned
@@ -57,23 +57,18 @@ export function changeUserRole(
   }
 
   const platformAdmin = db
-    .select({ id: users.id, name: users.name, email: users.email })
+    .select()
     .from(users)
     .where(eq(users.id, platformAdminId))
     .get();
-  const recipient: NotificationPerson = {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-  };
 
   return {
     ok: true,
     notifications: [
       {
         kind: "role-changed",
-        recipient,
-        actor: platformAdmin ?? null,
+        recipient: personOf(user),
+        actor: platformAdmin ? personOf(platformAdmin) : null,
         title: `You're now ${ROLE_NAMES[role]} on Cadence`,
         link: ROLE_LANDING_PAGES[role],
       },
