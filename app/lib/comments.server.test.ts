@@ -185,4 +185,131 @@ describe("createComment", () => {
       });
     });
   });
+
+  describe("Notifications", () => {
+    it("notifies the course's Instructor of a new Question", () => {
+      const result = createComment(testDb, {
+        userId: base.user.id,
+        lessonId: lesson.id,
+        parentId: null,
+        body: "How does this work?",
+      });
+
+      expect(result).toMatchObject({
+        success: true,
+        notifications: [
+          {
+            kind: "question-asked",
+            recipient: {
+              id: base.instructor.id,
+              name: "Test Instructor",
+              email: "instructor@example.com",
+            },
+            actor: {
+              id: base.user.id,
+              name: "Test User",
+              email: "test@example.com",
+            },
+            title: "New question on Intro in Test Course",
+            body: "How does this work?",
+            link: "/instructor/questions",
+          },
+        ],
+      });
+    });
+
+    it("does not notify the Instructor of their own Question", () => {
+      const result = createComment(testDb, {
+        userId: base.instructor.id,
+        lessonId: lesson.id,
+        parentId: null,
+        body: "Pinned: read the notes first",
+      });
+
+      expect(result).toMatchObject({ success: true, notifications: [] });
+    });
+
+    it("notifies the Question's author of a Reply, linking to the Reply", () => {
+      const question = createComment(testDb, {
+        userId: base.user.id,
+        lessonId: lesson.id,
+        parentId: null,
+        body: "How does this work?",
+      });
+      if (!question.success) throw new Error(question.error);
+
+      const result = createComment(testDb, {
+        userId: base.instructor.id,
+        lessonId: lesson.id,
+        parentId: question.comment.id,
+        body: "Like this.",
+      });
+      if (!result.success) throw new Error(result.error);
+
+      expect(result.notifications).toEqual([
+        {
+          kind: "reply-posted",
+          recipient: {
+            id: base.user.id,
+            name: "Test User",
+            email: "test@example.com",
+          },
+          actor: {
+            id: base.instructor.id,
+            name: "Test Instructor",
+            email: "instructor@example.com",
+          },
+          title: "Test Instructor replied to your comment on Intro",
+          body: "Like this.",
+          link: `/courses/test-course/lessons/${lesson.id}#comment-${result.comment.id}`,
+        },
+      ]);
+    });
+
+    it("sends nothing when you reply to your own Comment", () => {
+      const question = createComment(testDb, {
+        userId: base.user.id,
+        lessonId: lesson.id,
+        parentId: null,
+        body: "How does this work?",
+      });
+      if (!question.success) throw new Error(question.error);
+
+      const result = createComment(testDb, {
+        userId: base.user.id,
+        lessonId: lesson.id,
+        parentId: question.comment.id,
+        body: "Never mind, figured it out.",
+      });
+
+      expect(result).toMatchObject({ success: true, notifications: [] });
+    });
+
+    it("shows only the first 140 characters of a long Comment", () => {
+      const sentence = "This lesson's second example confuses me. ";
+      const result = createComment(testDb, {
+        userId: base.user.id,
+        lessonId: lesson.id,
+        parentId: null,
+        body: sentence.repeat(5),
+      });
+      if (!result.success) throw new Error(result.error);
+
+      expect(result.notifications[0]?.body).toBe(
+        "This lesson's second example confuses me. This lesson's second example confuses me. This lesson's second example confuses me. This lesson's…"
+      );
+    });
+
+    it("shows a Comment of exactly 140 characters in full", () => {
+      const result = createComment(testDb, {
+        userId: base.user.id,
+        lessonId: lesson.id,
+        parentId: null,
+        body: "a".repeat(140),
+      });
+      if (!result.success) throw new Error(result.error);
+
+      expect(result.notifications[0]?.body).toBe("a".repeat(140));
+    });
+  });
 });
