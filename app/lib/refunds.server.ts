@@ -444,7 +444,7 @@ const PURCHASE_KIND_NAMES: Record<PurchaseKind, string> = {
   team_licence: "Team Licence",
 };
 
-function personOf(user: typeof users.$inferSelect): NotificationPerson {
+export function personOf(user: typeof users.$inferSelect): NotificationPerson {
   return { id: user.id, name: user.name, email: user.email };
 }
 
