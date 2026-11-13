@@ -1,10 +1,11 @@
 import "~/lib/env.server";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import Knock from "@knocklabs/node";
-import type { Notification } from "~/lib/notifications";
+import Knock, { signUserToken } from "@knocklabs/node";
+import type { KnockFeedCredentials, Notification } from "~/lib/notifications";
 
 export type {
+  KnockFeedCredentials,
   Notification,
   NotificationKind,
   NotificationPerson,
@@ -109,4 +110,40 @@ export function chooseTransport(
 
 function defaultTransport(): NotificationTransport {
   return chooseTransport(process.env);
+}
+
+type KnockFeedEnv = {
+  KNOCK_PUBLIC_KEY?: string;
+  KNOCK_FEED_CHANNEL_ID?: string;
+  KNOCK_SIGNING_KEY?: string;
+  /** Dev-only override to check token refresh with a short expiry. */
+  KNOCK_TOKEN_TTL_SECONDS?: string;
+};
+
+const TOKEN_TTL_SECONDS = 60 * 60;
+
+/**
+ * Feed credentials for the signed-in person, with a freshly signed user token
+ * (enhanced security is on). Null when nobody is signed in or Knock isn't
+ * configured, in which case there is no bell.
+ */
+export async function knockFeedCredentials(
+  userId: number | null,
+  env: KnockFeedEnv = process.env
+): Promise<KnockFeedCredentials | null> {
+  const {
+    KNOCK_PUBLIC_KEY: knockPublicKey,
+    KNOCK_FEED_CHANNEL_ID: knockFeedChannelId,
+    KNOCK_SIGNING_KEY: signingKey,
+  } = env;
+  if (userId === null || !knockPublicKey || !knockFeedChannelId || !signingKey) {
+    return null;
+  }
+  const knockUserId = String(userId);
+  const knockUserToken = await signUserToken(knockUserId, {
+    signingKey,
+    expiresInSeconds:
+      Number(env.KNOCK_TOKEN_TTL_SECONDS) || TOKEN_TTL_SECONDS,
+  });
+  return { knockPublicKey, knockFeedChannelId, knockUserId, knockUserToken };
 }
