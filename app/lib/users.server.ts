@@ -1,14 +1,11 @@
 import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import * as schema from "~/db/schema";
+import type { Db } from "~/db";
 import { UserRole, users } from "~/db/schema";
 import type { Notification, NotificationPerson } from "~/lib/notifications";
 
 // ─── Users ───
 // Platform Admin changes to a user. Database first, Notifications returned
 // for the route to hand to notify().
-
-type Db = BetterSQLite3Database<typeof schema>;
 
 export type ChangeUserRoleResult =
   | { ok: true; notifications: Notification[] }

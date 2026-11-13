@@ -1,14 +1,11 @@
 import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import * as schema from "~/db/schema";
+import type { Db } from "~/db";
 import { CourseStatus, courses, users } from "~/db/schema";
 import type { Notification, NotificationPerson } from "~/lib/notifications";
 
 // ─── Courses ───
 // Platform Admin changes to a course. Database first, Notifications returned
 // for the route to hand to notify().
-
-type Db = BetterSQLite3Database<typeof schema>;
 
 export type ChangeCourseStatusResult =
   | { ok: true; notifications: Notification[] }
