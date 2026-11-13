@@ -1,0 +1,33 @@
+// ─── Notifications (shared types) ───
+// Safe to import from client code. Sending lives in notifications.server.ts.
+
+/** One Knock workflow per kind; the kind is the workflow key. */
+export const NOTIFICATION_KINDS = [
+  "refund-request-raised",
+  "refund-request-approved",
+  "refund-request-declined",
+  "seat-claimed",
+  "question-asked",
+  "reply-posted",
+  "course-status-changed",
+  "role-changed",
+] as const;
+
+export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
+
+export type NotificationPerson = { id: number; name: string; email: string };
+
+export type Notification = {
+  kind: NotificationKind;
+  recipient: NotificationPerson;
+  /** The person who acted. Shown in the feed; never used to pick recipients. */
+  actor: NotificationPerson | null;
+  title: string;
+  body?: string;
+  link: string;
+};
+
+/** Notification wording shows money in euros: 7900 cents → "€79.00". */
+export function formatEuros(cents: number): string {
+  return `€${(cents / 100).toFixed(2)}`;
+}
