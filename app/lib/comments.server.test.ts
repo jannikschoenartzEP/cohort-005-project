@@ -185,4 +185,37 @@ describe("createComment", () => {
       });
     });
   });
+
+  describe("Notifications", () => {
+    it("notifies the course's Instructor of a new Question", () => {
+      const result = createComment(testDb, {
+        userId: base.user.id,
+        lessonId: lesson.id,
+        parentId: null,
+        body: "How does this work?",
+      });
+
+      expect(result).toMatchObject({
+        success: true,
+        notifications: [
+          {
+            kind: "question-asked",
+            recipient: {
+              id: base.instructor.id,
+              name: "Test Instructor",
+              email: "instructor@example.com",
+            },
+            actor: {
+              id: base.user.id,
+              name: "Test User",
+              email: "test@example.com",
+            },
+            title: "New question on Intro in Test Course",
+            body: "How does this work?",
+            link: "/instructor/questions",
+          },
+        ],
+      });
+    });
+  });
 });
