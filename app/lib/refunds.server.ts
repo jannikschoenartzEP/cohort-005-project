@@ -15,7 +15,13 @@ import {
   videoWatchEvents,
   LessonProgressStatus,
   RefundStatus,
+  UserRole,
 } from "~/db/schema";
+import {
+  formatEuros,
+  type Notification,
+  type NotificationPerson,
+} from "~/lib/notifications";
 import { formatPrice } from "~/lib/utils";
 import {
   REFUND_COMPLETION_LIMIT,
@@ -351,7 +357,13 @@ export function getRefundOffer(
 export type Email = { to: string; subject: string; body: string };
 
 export type RaiseResult =
-  | { ok: true; refundRequestId: number; kind: PurchaseKind; email: Email }
+  | {
+      ok: true;
+      refundRequestId: number;
+      kind: PurchaseKind;
+      email: Email;
+      notifications: Notification[];
+    }
   | Failure;
 
 export function raiseRefundRequest(
@@ -387,10 +399,29 @@ export function raiseRefundRequest(
     .returning()
     .get();
 
+  const kind = kindOf(getSeats(db, purchase.id));
+  const actor = personOf(buyer);
+  const notifications: Notification[] = db
+    .select()
+    .from(users)
+    .where(eq(users.role, UserRole.Admin))
+    .orderBy(asc(users.id))
+    .all()
+    .filter((platformAdmin) => platformAdmin.id !== buyer.id)
+    .map((platformAdmin) => ({
+      kind: "refund-request-raised",
+      recipient: personOf(platformAdmin),
+      actor,
+      title: `New Refund Request for ${course.title}`,
+      body: `${buyer.name} asked for ${formatEuros(purchase.amountPaid)} back on their ${PURCHASE_KIND_NAMES[kind]}.`,
+      link: "/admin/refunds",
+    }));
+
   return {
     ok: true,
     refundRequestId: refundRequest.id,
-    kind: kindOf(getSeats(db, purchase.id)),
+    kind,
+    notifications,
     email: {
       to: buyer.email,
       subject: `Refund requested — ${course.title}`,
@@ -406,6 +437,15 @@ export function raiseRefundRequest(
       ].join("\n"),
     },
   };
+}
+
+const PURCHASE_KIND_NAMES: Record<PurchaseKind, string> = {
+  individual_purchase: "Individual Purchase",
+  team_licence: "Team Licence",
+};
+
+function personOf(user: typeof users.$inferSelect): NotificationPerson {
+  return { id: user.id, name: user.name, email: user.email };
 }
 
 // ─── Listing Refund Requests ───

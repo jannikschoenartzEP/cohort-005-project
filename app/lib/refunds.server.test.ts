@@ -166,6 +166,38 @@ describe("raising a Refund Request", () => {
     expect(result).toMatchObject({ ok: true, kind: "individual_purchase" });
   });
 
+  it("notifies every Platform Admin about it", () => {
+    const sam = db
+      .insert(schema.users)
+      .values({ name: "Sam Admin", email: "sam@example.com", role: UserRole.Admin })
+      .returning()
+      .get();
+    const purchase = buyForSelf(base.user.id);
+
+    const result = raiseRefundRequest(db, purchase.id, base.user.id, "Nope.", NOW);
+
+    if (!result.ok) throw new Error(result.error);
+    const buyer = { id: base.user.id, name: "Test User", email: "test@example.com" };
+    expect(result.notifications).toEqual([
+      {
+        kind: "refund-request-raised",
+        recipient: { id: platformAdmin.id, name: "Pat Admin", email: "pat@example.com" },
+        actor: buyer,
+        title: "New Refund Request for Test Course",
+        body: "Test User asked for €79.00 back on their Individual Purchase.",
+        link: "/admin/refunds",
+      },
+      {
+        kind: "refund-request-raised",
+        recipient: { id: sam.id, name: "Sam Admin", email: "sam@example.com" },
+        actor: buyer,
+        title: "New Refund Request for Test Course",
+        body: "Test User asked for €79.00 back on their Individual Purchase.",
+        link: "/admin/refunds",
+      },
+    ]);
+  });
+
   it("refuses anyone but the buyer", () => {
     const purchase = buyForSelf(base.user.id);
     const someoneElse = addLearner("Ben");
