@@ -1,0 +1,16 @@
+{
+  "name": "Refund Request raised",
+  "description": "SPIKE: pass-through in-app Notification. Cadence writes the wording.",
+  "categories": [],
+  "steps": [
+    {
+      "ref": "in_app_feed_1",
+      "type": "channel",
+      "channel_key": "in-app",
+      "template": {
+        "markdown_body": "**{{ title }}**\n\n{{ body }}",
+        "action_url": "{{ link }}"
+      }
+    }
+  ]
+}
