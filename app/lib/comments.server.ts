@@ -3,7 +3,11 @@ import * as schema from "~/db/schema";
 import { comments, courses, lessons, modules, users } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import type { Notification, NotificationPerson } from "~/lib/notifications";
-import { MAX_COMMENT_LENGTH, MIN_COMMENT_LENGTH } from "./comments";
+import {
+  MAX_COMMENT_LENGTH,
+  MIN_COMMENT_LENGTH,
+  commentAnchor,
+} from "./comments";
 
 type Db = BetterSQLite3Database<typeof schema>;
 
@@ -44,6 +48,7 @@ export function createComment(
       id: lessons.id,
       title: lessons.title,
       courseTitle: courses.title,
+      courseSlug: courses.slug,
       instructorId: courses.instructorId,
     })
     .from(lessons)
@@ -55,8 +60,9 @@ export function createComment(
     return { success: false, error: "Lesson not found" };
   }
 
+  let parent: Comment | undefined;
   if (input.parentId !== null) {
-    const parent = db
+    parent = db
       .select()
       .from(comments)
       .where(eq(comments.id, input.parentId))
@@ -88,14 +94,25 @@ export function createComment(
 
   const author = getUser(db, comment.userId);
   const notifications: Notification[] = [];
-  if (comment.parentId === null && lesson.instructorId !== author.id) {
+  if (!parent) {
+    if (lesson.instructorId !== author.id) {
+      notifications.push({
+        kind: "question-asked",
+        recipient: personOf(getUser(db, lesson.instructorId)),
+        actor: personOf(author),
+        title: `New question on ${lesson.title} in ${lesson.courseTitle}`,
+        body: preview(comment.body),
+        link: "/instructor/questions",
+      });
+    }
+  } else if (parent.userId !== author.id) {
     notifications.push({
-      kind: "question-asked",
-      recipient: personOf(getUser(db, lesson.instructorId)),
+      kind: "reply-posted",
+      recipient: personOf(getUser(db, parent.userId)),
       actor: personOf(author),
-      title: `New question on ${lesson.title} in ${lesson.courseTitle}`,
-      body: comment.body,
-      link: "/instructor/questions",
+      title: `${author.name} replied to your comment on ${lesson.title}`,
+      body: preview(comment.body),
+      link: `/courses/${lesson.courseSlug}/lessons/${lesson.id}#${commentAnchor(comment.id)}`,
     });
   }
 
@@ -112,4 +129,12 @@ function getUser(db: Db, userId: number): User {
 
 function personOf(user: User): NotificationPerson {
   return { id: user.id, name: user.name, email: user.email };
+}
+
+const PREVIEW_LENGTH = 140;
+
+/** A Notification shows only the start of a Comment. */
+function preview(body: string): string {
+  if (body.length <= PREVIEW_LENGTH) return body;
+  return `${body.slice(0, PREVIEW_LENGTH).trimEnd()}…`;
 }
