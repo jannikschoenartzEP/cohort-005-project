@@ -790,10 +790,15 @@ export function declineRefundRequest(
         kindOf(getSeats(tx, found.purchase.id)),
         platformAdminId,
         RefundStatus.Declined,
-        `${trimmedNote} You can raise a new Refund Request.`
+        `${asSentence(trimmedNote)} You can raise a new Refund Request.`
       ),
     };
   });
+}
+
+/** Ends a note with a full stop unless it already ends a sentence. */
+function asSentence(note: string): string {
+  return /[.!?]$/.test(note) ? note : `${note}.`;
 }
 
 /**

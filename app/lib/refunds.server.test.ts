@@ -568,6 +568,20 @@ describe("declining a Refund Request", () => {
     ]);
   });
 
+  it.each([
+    ["Too late", "Too late. You can raise a new Refund Request."],
+    ["Too late!", "Too late! You can raise a new Refund Request."],
+    ["Did you mean another course?", "Did you mean another course? You can raise a new Refund Request."],
+  ])("ends the note %j as a sentence before the follow-up", (note, body) => {
+    const purchase = buyForSelf(base.user.id);
+    const id = raise(purchase.id, base.user.id);
+
+    const result = declineRefundRequest(db, id, platformAdmin.id, note, NOW);
+
+    if (!result.ok) throw new Error(result.error);
+    expect(result.notifications).toMatchObject([{ body }]);
+  });
+
   it("links a Team Admin's declined Notification to the team page", () => {
     const priya = addLearner("Priya");
     const { purchase } = buySeats(priya.id, 1);
