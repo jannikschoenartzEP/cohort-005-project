@@ -11,6 +11,7 @@ import {
 } from "~/components/comment-thread";
 import { MIN_COMMENT_LENGTH, MAX_COMMENT_LENGTH } from "~/lib/comments";
 import { createComment } from "~/lib/comments.server";
+import { notify } from "~/lib/notifications.server";
 import { db } from "~/db";
 import {
   categories,
@@ -877,6 +878,7 @@ export async function action({ params, request }: Route.ActionArgs) {
         if (!result.success) {
           return { ok: false, error: result.error };
         }
+        await notify(result.notifications);
         return { ok: true };
       }
 
