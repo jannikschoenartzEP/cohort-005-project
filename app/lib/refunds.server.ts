@@ -17,11 +17,7 @@ import {
   RefundStatus,
   UserRole,
 } from "~/db/schema";
-import {
-  formatEuros,
-  type Notification,
-  type NotificationPerson,
-} from "~/lib/notifications";
+import type { Notification, NotificationPerson } from "~/lib/notifications";
 import { formatPrice } from "~/lib/utils";
 import {
   REFUND_COMPLETION_LIMIT,
@@ -413,7 +409,7 @@ export function raiseRefundRequest(
       recipient: personOf(platformAdmin),
       actor,
       title: `New Refund Request for ${course.title}`,
-      body: `${buyer.name} asked for ${formatEuros(purchase.amountPaid)} back on their ${PURCHASE_KIND_NAMES[kind]}.`,
+      body: `${buyer.name} asked for ${formatPrice(purchase.amountPaid)} back on their ${PURCHASE_KIND_NAMES[kind]}.`,
       link: "/admin/refunds",
     }));
 
@@ -725,7 +721,7 @@ export function approveRefundRequest(
       .run();
 
     const body = [
-      `You'll get back ${formatEuros(purchase.amountPaid)}.`,
+      `You'll get back ${formatPrice(purchase.amountPaid)}.`,
       ...(whatEnded ? [whatEnded] : []),
     ].join(" ");
 

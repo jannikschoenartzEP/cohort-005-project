@@ -21,7 +21,7 @@ const raised: Notification = {
   recipient: pat,
   actor: liam,
   title: "New Refund Request for Test Course",
-  body: "Liam Thompson asked for €79.00 back on their Individual Purchase.",
+  body: "Liam Thompson asked for $79.00 back on their Individual Purchase.",
   link: "/admin/refunds",
 };
 
@@ -53,7 +53,7 @@ describe("notify", () => {
           actor: { id: "3", name: "Liam Thompson", email: "liam@example.com" },
           data: {
             title: "New Refund Request for Test Course",
-            body: "Liam Thompson asked for €79.00 back on their Individual Purchase.",
+            body: "Liam Thompson asked for $79.00 back on their Individual Purchase.",
             link: "/admin/refunds",
           },
         },

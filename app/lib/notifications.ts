@@ -38,8 +38,3 @@ export type KnockFeedCredentials = {
   knockUserId: string;
   knockUserToken: string;
 };
-
-/** Notification wording shows money in euros: 7900 cents → "€79.00". */
-export function formatEuros(cents: number): string {
-  return `€${(cents / 100).toFixed(2)}`;
-}

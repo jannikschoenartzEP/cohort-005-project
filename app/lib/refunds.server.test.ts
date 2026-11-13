@@ -184,7 +184,7 @@ describe("raising a Refund Request", () => {
         recipient: { id: platformAdmin.id, name: "Pat Admin", email: "pat@example.com" },
         actor: buyer,
         title: "New Refund Request for Test Course",
-        body: "Test User asked for €79.00 back on their Individual Purchase.",
+        body: "Test User asked for $79.00 back on their Individual Purchase.",
         link: "/admin/refunds",
       },
       {
@@ -192,7 +192,7 @@ describe("raising a Refund Request", () => {
         recipient: { id: sam.id, name: "Sam Admin", email: "sam@example.com" },
         actor: buyer,
         title: "New Refund Request for Test Course",
-        body: "Test User asked for €79.00 back on their Individual Purchase.",
+        body: "Test User asked for $79.00 back on their Individual Purchase.",
         link: "/admin/refunds",
       },
     ]);
@@ -215,7 +215,7 @@ describe("raising a Refund Request", () => {
         recipient: { id: platformAdmin.id, name: "Pat Admin", email: "pat@example.com" },
         actor: { id: buyer.id, name: "Sam Admin", email: "sam@example.com" },
         title: "New Refund Request for Test Course",
-        body: "Sam Admin asked for €237.00 back on their Team Licence.",
+        body: "Sam Admin asked for $237.00 back on their Team Licence.",
         link: "/admin/refunds",
       },
     ]);
@@ -448,7 +448,7 @@ describe("approving a Refund Request", () => {
         recipient: { id: base.user.id, name: "Test User", email: "test@example.com" },
         actor: { id: platformAdmin.id, name: "Pat Admin", email: "pat@example.com" },
         title: "Your Refund Request for Test Course was approved",
-        body: "You'll get back €79.00. Your Enrollment on this course has ended.",
+        body: "You'll get back $79.00. Your Enrollment on this course has ended.",
         link: "/courses/test-course",
       },
     ]);
@@ -476,7 +476,7 @@ describe("approving a Refund Request", () => {
     expect(result.notifications).toMatchObject([
       {
         kind: "refund-request-approved",
-        body: "You'll get back €49.00.",
+        body: "You'll get back $49.00.",
         link: "/courses/test-course",
       },
     ]);
@@ -496,7 +496,7 @@ describe("approving a Refund Request", () => {
         recipient: { id: priya.id, name: "Priya", email: "priya@example.com" },
         actor: { id: platformAdmin.id, name: "Pat Admin", email: "pat@example.com" },
         title: "Your Refund Request for Test Course was approved",
-        body: "You'll get back €158.00. Its Unclaimed Seats can no longer be claimed.",
+        body: "You'll get back $158.00. Its Unclaimed Seats can no longer be claimed.",
         link: "/team",
       },
     ]);
