@@ -582,6 +582,43 @@ describe("declining a Refund Request", () => {
   });
 });
 
+describe("Notifications about deciding a Refund Request", () => {
+  it("notifies nobody when the buyer is the Platform Admin who decided", () => {
+    const sam = db
+      .insert(schema.users)
+      .values({ name: "Sam Admin", email: "sam@example.com", role: UserRole.Admin })
+      .returning()
+      .get();
+    const first = buyForSelf(sam.id, 3, 4900);
+    const second = buyForSelf(sam.id, 2, 4900);
+    const approved = raise(first.id, sam.id);
+    const declined = raise(second.id, sam.id);
+
+    const approval = approveRefundRequest(db, approved, sam.id, null, NOW);
+    const decline = declineRefundRequest(db, declined, sam.id, "No.", NOW);
+
+    expect(approval).toMatchObject({ ok: true, notifications: [] });
+    expect(decline).toMatchObject({ ok: true, notifications: [] });
+  });
+
+  it("notifies nobody when the decision fails", () => {
+    const purchase = buyForSelf(base.user.id);
+    const id = raise(purchase.id, base.user.id);
+    approveRefundRequest(db, id, platformAdmin.id, null, NOW);
+
+    expect(approveRefundRequest(db, id, platformAdmin.id, null, NOW)).toEqual({
+      ok: false,
+      status: 409,
+      error: "This refund request was already approved.",
+    });
+    expect(declineRefundRequest(db, id, platformAdmin.id, "No.", NOW)).toEqual({
+      ok: false,
+      status: 409,
+      error: "This refund request was already approved.",
+    });
+  });
+});
+
 describe("listing Refund Requests", () => {
   it("shows a Platform Admin live figures and the rules a request breaks", () => {
     const purchase = buyForSelf(base.user.id);
