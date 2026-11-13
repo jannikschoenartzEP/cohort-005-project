@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   knockTransport,
   notify,
   type KnockWorkflows,
   type Notification,
+  type NotificationTransport,
 } from "./notifications.server";
 
 const pat = { id: 7, name: "Pat Admin", email: "pat@example.com" };
@@ -52,5 +53,25 @@ describe("notify", () => {
         },
       },
     ]);
+  });
+
+  it("logs a failed send, carries on with the rest and never throws", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const sent: Notification[] = [];
+    const flaky: NotificationTransport = {
+      async send(notification) {
+        if (notification.recipient.id === pat.id) {
+          throw new Error("401 The API key you supplied is invalid");
+        }
+        sent.push(notification);
+      },
+    };
+    const toAlex = { ...raised, recipient: { ...pat, id: 8, name: "Alex" } };
+
+    await expect(notify([raised, toAlex], flaky)).resolves.toBeUndefined();
+
+    expect(sent).toEqual([toAlex]);
+    expect(error).toHaveBeenCalledOnce();
+    error.mockRestore();
   });
 });

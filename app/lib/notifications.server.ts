@@ -58,12 +58,23 @@ export function knockTransport(knock: KnockWorkflows): NotificationTransport {
   };
 }
 
+/**
+ * Best effort: every failure is logged and swallowed, so the action that
+ * caused the Notifications still succeeds (unlike email). Nothing is retried.
+ */
 export async function notify(
   notifications: Notification[],
   transport: NotificationTransport = defaultTransport()
 ): Promise<void> {
   for (const notification of notifications) {
-    await transport.send(notification);
+    try {
+      await transport.send(notification);
+    } catch (error) {
+      console.error(
+        `[notifications] Failed to send ${notification.kind} to user ${notification.recipient.id}:`,
+        error
+      );
+    }
   }
 }
 
