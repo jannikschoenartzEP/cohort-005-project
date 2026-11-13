@@ -169,7 +169,7 @@ export async function action({ request }: Route.ActionArgs) {
   const access = await requireStaff(request, course.courseId);
 
   const result = createComment(db, {
-    userId: access.userId!,
+    userId: access.userId,
     lessonId: question.lessonId,
     parentId: question.id,
     body: parsed.data.body,
