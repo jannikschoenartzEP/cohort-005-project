@@ -16,7 +16,11 @@ import {
   RefundStatus,
   UserRole,
 } from "~/db/schema";
-import { personOf, type Notification } from "~/lib/notifications";
+import {
+  personOf,
+  type Notification,
+  type NotificationKind,
+} from "~/lib/notifications";
 import { formatPrice } from "~/lib/utils";
 import {
   REFUND_COMPLETION_LIMIT,
@@ -771,6 +775,14 @@ export function declineRefundRequest(
   });
 }
 
+const DECISION_KINDS = {
+  [RefundStatus.Approved]: "refund-request-approved",
+  [RefundStatus.Declined]: "refund-request-declined",
+} as const satisfies Record<
+  RefundStatus.Approved | RefundStatus.Declined,
+  NotificationKind
+>;
+
 /** Ends a note with a full stop unless it already ends a sentence. */
 function asSentence(note: string): string {
   return /[.!?]$/.test(note) ? note : `${note}.`;
@@ -808,10 +820,7 @@ function buildDecisionNotifications(
 
   return [
     {
-      kind:
-        decision === RefundStatus.Approved
-          ? "refund-request-approved"
-          : "refund-request-declined",
+      kind: DECISION_KINDS[decision],
       recipient: personOf(buyer),
       actor: platformAdmin ? personOf(platformAdmin) : null,
       title: `Your Refund Request for ${course.title} was ${decision}`,
