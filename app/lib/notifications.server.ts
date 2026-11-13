@@ -1,4 +1,6 @@
 import "~/lib/env.server";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import Knock from "@knocklabs/node";
 import type { Notification } from "~/lib/notifications";
 
@@ -78,6 +80,33 @@ export async function notify(
   }
 }
 
+export function fileTransport(directory: string): NotificationTransport {
+  return {
+    async send(notification) {
+      mkdirSync(directory, { recursive: true });
+      const file = join(
+        directory,
+        `${Date.now()}-${notification.kind}-${notification.recipient.id}.json`
+      );
+      writeFileSync(file, JSON.stringify(notification, null, 2));
+    },
+  };
+}
+
+/**
+ * Knock when KNOCK_API_KEY is set; otherwise (local dev, tests) each
+ * Notification is written to a git-ignored folder, like the mailer's .outbox/.
+ */
+export function chooseTransport(
+  env: { KNOCK_API_KEY?: string },
+  directory = ".notifications"
+): NotificationTransport {
+  const apiKey = env.KNOCK_API_KEY;
+  return apiKey
+    ? knockTransport(new Knock({ apiKey }))
+    : fileTransport(directory);
+}
+
 function defaultTransport(): NotificationTransport {
-  return knockTransport(new Knock({ apiKey: process.env.KNOCK_API_KEY }));
+  return chooseTransport(process.env);
 }

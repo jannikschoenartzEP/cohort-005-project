@@ -1,5 +1,9 @@
+import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
+  chooseTransport,
   knockTransport,
   notify,
   type KnockWorkflows,
@@ -73,5 +77,16 @@ describe("notify", () => {
     expect(sent).toEqual([toAlex]);
     expect(error).toHaveBeenCalledOnce();
     error.mockRestore();
+  });
+
+  it("writes each Notification to a local folder when there is no Knock API key", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "notifications-"));
+
+    await notify([raised], chooseTransport({ KNOCK_API_KEY: "" }, directory));
+
+    const files = readdirSync(directory);
+    expect(files).toHaveLength(1);
+    const written = JSON.parse(readFileSync(join(directory, files[0]), "utf8"));
+    expect(written).toEqual(raised);
   });
 });
