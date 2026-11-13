@@ -1,9 +1,11 @@
 import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
+import { createVerify, generateKeyPairSync } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
   chooseTransport,
+  knockFeedCredentials,
   knockTransport,
   notify,
   type KnockWorkflows,
@@ -89,4 +91,57 @@ describe("notify", () => {
     const written = JSON.parse(readFileSync(join(directory, files[0]), "utf8"));
     expect(written).toEqual(raised);
   });
+});
+
+describe("knockFeedCredentials", () => {
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+  });
+  const configured = {
+    KNOCK_PUBLIC_KEY: "pk_test_123",
+    KNOCK_FEED_CHANNEL_ID: "feed-channel-uuid",
+    KNOCK_SIGNING_KEY: privateKey
+      .export({ type: "pkcs8", format: "pem" })
+      .toString(),
+  };
+
+  function decode(token: string) {
+    const [header, payload, signature] = token.split(".");
+    const verified = createVerify("RSA-SHA256")
+      .update(`${header}.${payload}`)
+      .verify(publicKey, Buffer.from(signature, "base64url"));
+    return {
+      verified,
+      header: JSON.parse(Buffer.from(header, "base64url").toString()),
+      payload: JSON.parse(Buffer.from(payload, "base64url").toString()),
+    };
+  }
+
+  it("gives a signed-in person their feed keys and an RS256 token valid for an hour", async () => {
+    const credentials = await knockFeedCredentials(7, configured);
+
+    expect(credentials).toMatchObject({
+      knockPublicKey: "pk_test_123",
+      knockFeedChannelId: "feed-channel-uuid",
+      knockUserId: "7",
+    });
+    const token = decode(credentials?.knockUserToken ?? "");
+    expect(token.verified).toBe(true);
+    expect(token.header.alg).toBe("RS256");
+    expect(token.payload.sub).toBe("7");
+    expect(token.payload.exp - token.payload.iat).toBe(3600);
+  });
+
+  it("gives nothing when nobody is signed in", async () => {
+    expect(await knockFeedCredentials(null, configured)).toBeNull();
+  });
+
+  it.each(["KNOCK_PUBLIC_KEY", "KNOCK_FEED_CHANNEL_ID", "KNOCK_SIGNING_KEY"])(
+    "gives nothing when %s is missing",
+    async (missing) => {
+      expect(
+        await knockFeedCredentials(7, { ...configured, [missing]: "" })
+      ).toBeNull();
+    }
+  );
 });
