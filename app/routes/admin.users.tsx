@@ -119,7 +119,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "update-role") {
     const { userId, role } = parsed.data;
     const result = changeUserRole(db, userId, role, currentUser.id);
-    if (!result.success) {
+    if (!result.ok) {
       throw data(result.error, { status: 404 });
     }
     await notify(result.notifications);

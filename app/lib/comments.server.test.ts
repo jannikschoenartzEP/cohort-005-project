@@ -38,7 +38,7 @@ describe("createComment", () => {
     });
 
     expect(result).toMatchObject({
-      success: true,
+      ok: true,
       comment: {
         userId: base.user.id,
         lessonId: lesson.id,
@@ -57,7 +57,7 @@ describe("createComment", () => {
     });
 
     expect(result).toEqual({
-      success: false,
+      ok: false,
       error: "Comment cannot be empty",
     });
   });
@@ -71,7 +71,7 @@ describe("createComment", () => {
     });
 
     expect(result).toEqual({
-      success: false,
+      ok: false,
       error: "Comment must be 5000 characters or fewer",
     });
   });
@@ -84,7 +84,7 @@ describe("createComment", () => {
       body: "a".repeat(5000),
     });
 
-    expect(result.success).toBe(true);
+    expect(result.ok).toBe(true);
   });
 
   it("rejects a Comment on a lesson that does not exist", () => {
@@ -95,7 +95,7 @@ describe("createComment", () => {
       body: "Hello?",
     });
 
-    expect(result).toEqual({ success: false, error: "Lesson not found" });
+    expect(result).toEqual({ ok: false, error: "Lesson not found" });
   });
 
   describe("Replies", () => {
@@ -106,7 +106,7 @@ describe("createComment", () => {
         parentId: null,
         body: "A question",
       });
-      if (!result.success) throw new Error(result.error);
+      if (!result.ok) throw new Error(result.error);
       return result.comment;
     }
 
@@ -121,7 +121,7 @@ describe("createComment", () => {
       });
 
       expect(result).toMatchObject({
-        success: true,
+        ok: true,
         comment: {
           userId: base.instructor.id,
           lessonId: lesson.id,
@@ -143,7 +143,7 @@ describe("createComment", () => {
       });
 
       expect(result).toEqual({
-        success: false,
+        ok: false,
         error: "Parent comment belongs to a different lesson",
       });
     });
@@ -156,7 +156,7 @@ describe("createComment", () => {
         parentId: question.id,
         body: "An answer",
       });
-      if (!reply.success) throw new Error(reply.error);
+      if (!reply.ok) throw new Error(reply.error);
 
       const result = createComment(testDb, {
         userId: base.user.id,
@@ -166,7 +166,7 @@ describe("createComment", () => {
       });
 
       expect(result).toEqual({
-        success: false,
+        ok: false,
         error: "Replies can only be one level deep",
       });
     });
@@ -180,7 +180,7 @@ describe("createComment", () => {
       });
 
       expect(result).toEqual({
-        success: false,
+        ok: false,
         error: "Parent comment not found",
       });
     });
@@ -196,7 +196,7 @@ describe("createComment", () => {
       });
 
       expect(result).toMatchObject({
-        success: true,
+        ok: true,
         notifications: [
           {
             kind: "question-asked",
@@ -226,7 +226,7 @@ describe("createComment", () => {
         body: "Pinned: read the notes first",
       });
 
-      expect(result).toMatchObject({ success: true, notifications: [] });
+      expect(result).toMatchObject({ ok: true, notifications: [] });
     });
 
     it("notifies the Question's author of a Reply, linking to the Reply", () => {
@@ -236,7 +236,7 @@ describe("createComment", () => {
         parentId: null,
         body: "How does this work?",
       });
-      if (!question.success) throw new Error(question.error);
+      if (!question.ok) throw new Error(question.error);
 
       const result = createComment(testDb, {
         userId: base.instructor.id,
@@ -244,7 +244,7 @@ describe("createComment", () => {
         parentId: question.comment.id,
         body: "Like this.",
       });
-      if (!result.success) throw new Error(result.error);
+      if (!result.ok) throw new Error(result.error);
 
       expect(result.notifications).toEqual([
         {
@@ -273,7 +273,7 @@ describe("createComment", () => {
         parentId: null,
         body: "How does this work?",
       });
-      if (!question.success) throw new Error(question.error);
+      if (!question.ok) throw new Error(question.error);
 
       const result = createComment(testDb, {
         userId: base.user.id,
@@ -282,7 +282,7 @@ describe("createComment", () => {
         body: "Never mind, figured it out.",
       });
 
-      expect(result).toMatchObject({ success: true, notifications: [] });
+      expect(result).toMatchObject({ ok: true, notifications: [] });
     });
 
     it("shows only the first 140 characters of a long Comment", () => {
@@ -293,7 +293,7 @@ describe("createComment", () => {
         parentId: null,
         body: sentence.repeat(5),
       });
-      if (!result.success) throw new Error(result.error);
+      if (!result.ok) throw new Error(result.error);
 
       expect(result.notifications[0]?.body).toBe(
         "This lesson's second example confuses me. This lesson's second example confuses me. This lesson's second example confuses me. This lesson's…"
@@ -307,7 +307,7 @@ describe("createComment", () => {
         parentId: null,
         body: "a".repeat(140),
       });
-      if (!result.success) throw new Error(result.error);
+      if (!result.ok) throw new Error(result.error);
 
       expect(result.notifications[0]?.body).toBe("a".repeat(140));
     });

@@ -174,7 +174,7 @@ export async function action({ request }: Route.ActionArgs) {
     parentId: question.id,
     body: parsed.data.body,
   });
-  if (!result.success) {
+  if (!result.ok) {
     return { ok: false, error: result.error };
   }
 

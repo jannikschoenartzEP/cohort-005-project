@@ -78,7 +78,7 @@ describe("claiming a Seat", () => {
 
     const result = claimSeat(db, seats[0].code, sam.id, "DE", NOW);
 
-    if (!result.success) throw new Error(result.error);
+    if (!result.ok) throw new Error(result.error);
     expect(isEnrolled(sam.id)).toBe(true);
     expect(result.courseSlug).toBe("test-course");
     expect(result.notifications).toEqual([
@@ -98,7 +98,7 @@ describe("claiming a Seat", () => {
 
     const result = claimSeat(db, seats[0].code, teamAdmin.id, "DE", NOW);
 
-    if (!result.success) throw new Error(result.error);
+    if (!result.ok) throw new Error(result.error);
     expect(isEnrolled(teamAdmin.id)).toBe(true);
     expect(result.notifications).toEqual([]);
   });
@@ -112,7 +112,7 @@ describe("claiming a Seat", () => {
     const result = claimSeat(db, seats[0].code, kim.id, "DE", NOW);
 
     expect(result).toEqual({
-      success: false,
+      ok: false,
       error: "Coupon has already been redeemed",
     });
     expect(isEnrolled(kim.id)).toBe(false);
@@ -133,7 +133,7 @@ describe("claiming a Seat", () => {
     const result = claimSeat(db, seats[0].code, sam.id, "DE", NOW);
 
     expect(result).toEqual({
-      success: false,
+      ok: false,
       error:
         "This seat can't be claimed right now. Ask the person who shared it with you.",
     });
@@ -151,7 +151,7 @@ describe("claiming a Seat", () => {
     const result = claimSeat(db, seats[0].code, sam.id, "DE", NOW);
 
     expect(result).toEqual({
-      success: false,
+      ok: false,
       error:
         "This seat is no longer available. Ask the person who shared it with you.",
     });
@@ -164,7 +164,7 @@ describe("claiming a Seat", () => {
 
     const result = claimSeat(db, seats[0].code, sam.id, "FR", NOW);
 
-    expect(result.success).toBe(false);
+    expect(result.ok).toBe(false);
     expect(isEnrolled(sam.id)).toBe(false);
   });
 });

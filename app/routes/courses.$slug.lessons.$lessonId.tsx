@@ -875,7 +875,7 @@ export async function action({ params, request }: Route.ActionArgs) {
           parentId: parsed.data.parentId ?? null,
           body: parsed.data.body,
         });
-        if (!result.success) {
+        if (!result.ok) {
           return { ok: false, error: result.error };
         }
         await notify(result.notifications);

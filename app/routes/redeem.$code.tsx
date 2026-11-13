@@ -131,7 +131,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     new Date()
   );
 
-  if (!result.success) {
+  if (!result.ok) {
     return data({ error: result.error }, { status: 400 });
   }
 

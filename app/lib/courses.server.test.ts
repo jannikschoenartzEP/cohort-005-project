@@ -38,7 +38,7 @@ describe("changing a course's status", () => {
     );
 
     expect(result).toEqual({
-      success: true,
+      ok: true,
       notifications: [
         {
           kind: "course-status-changed",
@@ -66,7 +66,7 @@ describe("changing a course's status", () => {
 
     const result = changeCourseStatus(db, base.course.id, status, platformAdmin.id, NOW);
 
-    expect(result.success && result.notifications.map((n) => n.title)).toEqual([title]);
+    expect(result.ok && result.notifications.map((n) => n.title)).toEqual([title]);
   });
 
   it("stores the new status", () => {
@@ -94,7 +94,7 @@ describe("changing a course's status", () => {
       NOW
     );
 
-    expect(result).toEqual({ success: true, notifications: [] });
+    expect(result).toEqual({ ok: true, notifications: [] });
   });
 
   it("doesn't notify when the status stays the same", () => {
@@ -106,12 +106,12 @@ describe("changing a course's status", () => {
       NOW
     );
 
-    expect(result).toEqual({ success: true, notifications: [] });
+    expect(result).toEqual({ ok: true, notifications: [] });
   });
 
   it("fails for a course that doesn't exist", () => {
     const result = changeCourseStatus(db, 9999, CourseStatus.Published, platformAdmin.id, NOW);
 
-    expect(result).toEqual({ success: false, error: "Course not found." });
+    expect(result).toEqual({ ok: false, error: "Course not found." });
   });
 });

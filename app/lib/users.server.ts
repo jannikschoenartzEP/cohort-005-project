@@ -11,8 +11,8 @@ import type { Notification, NotificationPerson } from "~/lib/notifications";
 type Db = BetterSQLite3Database<typeof schema>;
 
 export type ChangeUserRoleResult =
-  | { success: true; notifications: Notification[] }
-  | { success: false; error: string };
+  | { ok: true; notifications: Notification[] }
+  | { ok: false; error: string };
 
 const ROLE_NAMES: Record<UserRole, string> = {
   [UserRole.Student]: "a Student",
@@ -41,7 +41,7 @@ export function changeUserRole(
     .where(eq(users.id, userId))
     .get();
   if (!before) {
-    return { success: false, error: "User not found." };
+    return { ok: false, error: "User not found." };
   }
 
   const user = db
@@ -51,12 +51,12 @@ export function changeUserRole(
     .returning()
     .get();
   if (!user) {
-    return { success: false, error: "User not found." };
+    return { ok: false, error: "User not found." };
   }
 
   // Nothing to announce if the role didn't change, or on a self-change.
   if (before.role === role || user.id === platformAdminId) {
-    return { success: true, notifications: [] };
+    return { ok: true, notifications: [] };
   }
 
   const platformAdmin = db
@@ -71,7 +71,7 @@ export function changeUserRole(
   };
 
   return {
-    success: true,
+    ok: true,
     notifications: [
       {
         kind: "role-changed",

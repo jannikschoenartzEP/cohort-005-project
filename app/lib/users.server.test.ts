@@ -26,7 +26,7 @@ describe("changing someone's role", () => {
     const result = changeUserRole(db, base.user.id, UserRole.Instructor, platformAdmin.id);
 
     expect(result).toEqual({
-      success: true,
+      ok: true,
       notifications: [
         {
           kind: "role-changed",
@@ -46,7 +46,7 @@ describe("changing someone's role", () => {
     const result = changeUserRole(db, base.instructor.id, role, platformAdmin.id);
 
     expect(
-      result.success && result.notifications.map((n) => ({ title: n.title, link: n.link }))
+      result.ok && result.notifications.map((n) => ({ title: n.title, link: n.link }))
     ).toEqual([{ title, link }]);
   });
 
@@ -60,18 +60,18 @@ describe("changing someone's role", () => {
   it("doesn't notify a Platform Admin who changes their own role", () => {
     const result = changeUserRole(db, platformAdmin.id, UserRole.Instructor, platformAdmin.id);
 
-    expect(result).toEqual({ success: true, notifications: [] });
+    expect(result).toEqual({ ok: true, notifications: [] });
   });
 
   it("doesn't notify when the role stays the same", () => {
     const result = changeUserRole(db, base.user.id, UserRole.Student, platformAdmin.id);
 
-    expect(result).toEqual({ success: true, notifications: [] });
+    expect(result).toEqual({ ok: true, notifications: [] });
   });
 
   it("fails for a user who doesn't exist", () => {
     const result = changeUserRole(db, 9999, UserRole.Student, platformAdmin.id);
 
-    expect(result).toEqual({ success: false, error: "User not found." });
+    expect(result).toEqual({ ok: false, error: "User not found." });
   });
 });

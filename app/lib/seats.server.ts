@@ -13,8 +13,8 @@ export const SEAT_REFUNDED =
   "This seat is no longer available. Ask the person who shared it with you.";
 
 export type ClaimResult =
-  | { success: true; courseSlug: string; notifications: Notification[] }
-  | { success: false; error: string };
+  | { ok: true; courseSlug: string; notifications: Notification[] }
+  | { ok: false; error: string };
 
 export function claimSeat(
   db: Db,
@@ -25,18 +25,18 @@ export function claimSeat(
 ): ClaimResult {
   const seat = db.select().from(coupons).where(eq(coupons.code, code)).get();
   if (!seat) {
-    return { success: false, error: "Coupon not found" };
+    return { ok: false, error: "Coupon not found" };
   }
 
   const availability = getSeatAvailability(db, seat);
   if (availability === "claimed") {
-    return { success: false, error: "Coupon has already been redeemed" };
+    return { ok: false, error: "Coupon has already been redeemed" };
   }
   if (availability === "on_hold") {
-    return { success: false, error: SEAT_ON_HOLD };
+    return { ok: false, error: SEAT_ON_HOLD };
   }
   if (availability === "refunded") {
-    return { success: false, error: SEAT_REFUNDED };
+    return { ok: false, error: SEAT_REFUNDED };
   }
 
   const alreadyEnrolled = db
@@ -50,7 +50,7 @@ export function claimSeat(
     )
     .get();
   if (alreadyEnrolled) {
-    return { success: false, error: "You are already enrolled in this course" };
+    return { ok: false, error: "You are already enrolled in this course" };
   }
 
   const purchase = db
@@ -60,7 +60,7 @@ export function claimSeat(
     .get();
   if (purchase?.country && purchase.country !== studentCountry) {
     return {
-      success: false,
+      ok: false,
       error:
         "This coupon can only be redeemed from the same country as the purchaser",
     };
@@ -73,7 +73,7 @@ export function claimSeat(
     .get();
   const student = db.select().from(users).where(eq(users.id, studentId)).get();
   if (!purchase || !course || !student) {
-    return { success: false, error: "Coupon not found" };
+    return { ok: false, error: "Coupon not found" };
   }
 
   db.transaction((tx) => {
@@ -87,7 +87,7 @@ export function claimSeat(
   });
 
   return {
-    success: true,
+    ok: true,
     courseSlug: course.slug,
     notifications: seatClaimedNotifications(db, purchase, course.title, student),
   };

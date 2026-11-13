@@ -139,7 +139,7 @@ export async function action({ request }: Route.ActionArgs) {
       currentUser.id,
       new Date()
     );
-    if (!result.success) {
+    if (!result.ok) {
       throw data(result.error, { status: 404 });
     }
     await notify(result.notifications);

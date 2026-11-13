@@ -11,8 +11,8 @@ import type { Notification, NotificationPerson } from "~/lib/notifications";
 type Db = BetterSQLite3Database<typeof schema>;
 
 export type ChangeCourseStatusResult =
-  | { success: true; notifications: Notification[] }
-  | { success: false; error: string };
+  | { ok: true; notifications: Notification[] }
+  | { ok: false; error: string };
 
 const STATUS_VERBS: Record<CourseStatus, string> = {
   [CourseStatus.Published]: "published",
@@ -33,7 +33,7 @@ export function changeCourseStatus(
     .where(eq(courses.id, courseId))
     .get();
   if (!before) {
-    return { success: false, error: "Course not found." };
+    return { ok: false, error: "Course not found." };
   }
 
   const course = db
@@ -43,23 +43,23 @@ export function changeCourseStatus(
     .returning()
     .get();
   if (!course) {
-    return { success: false, error: "Course not found." };
+    return { ok: false, error: "Course not found." };
   }
 
   // Nothing to announce if the status didn't change, or the Platform Admin
   // changed their own course.
   if (before.status === status || course.instructorId === platformAdminId) {
-    return { success: true, notifications: [] };
+    return { ok: true, notifications: [] };
   }
 
   const instructor = getPerson(db, course.instructorId);
   const platformAdmin = getPerson(db, platformAdminId);
   if (!instructor) {
-    return { success: true, notifications: [] };
+    return { ok: true, notifications: [] };
   }
 
   return {
-    success: true,
+    ok: true,
     notifications: [
       {
         kind: "course-status-changed",

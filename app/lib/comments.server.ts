@@ -14,8 +14,8 @@ type Db = BetterSQLite3Database<typeof schema>;
 export type Comment = typeof comments.$inferSelect;
 
 export type CreateCommentResult =
-  | { success: true; comment: Comment; notifications: Notification[] }
-  | { success: false; error: string };
+  | { ok: true; comment: Comment; notifications: Notification[] }
+  | { ok: false; error: string };
 
 /**
  * Creates a Comment on a lesson, or a Reply when `parentId` is set, and
@@ -34,11 +34,11 @@ export function createComment(
 ): CreateCommentResult {
   const body = input.body.trim();
   if (body.length < MIN_COMMENT_LENGTH) {
-    return { success: false, error: "Comment cannot be empty" };
+    return { ok: false, error: "Comment cannot be empty" };
   }
   if (body.length > MAX_COMMENT_LENGTH) {
     return {
-      success: false,
+      ok: false,
       error: `Comment must be ${MAX_COMMENT_LENGTH} characters or fewer`,
     };
   }
@@ -57,7 +57,7 @@ export function createComment(
     .where(eq(lessons.id, input.lessonId))
     .get();
   if (!lesson) {
-    return { success: false, error: "Lesson not found" };
+    return { ok: false, error: "Lesson not found" };
   }
 
   let parent: Comment | undefined;
@@ -68,16 +68,16 @@ export function createComment(
       .where(eq(comments.id, input.parentId))
       .get();
     if (!parent) {
-      return { success: false, error: "Parent comment not found" };
+      return { ok: false, error: "Parent comment not found" };
     }
     if (parent.lessonId !== input.lessonId) {
       return {
-        success: false,
+        ok: false,
         error: "Parent comment belongs to a different lesson",
       };
     }
     if (parent.parentId !== null) {
-      return { success: false, error: "Replies can only be one level deep" };
+      return { ok: false, error: "Replies can only be one level deep" };
     }
   }
 
@@ -116,7 +116,7 @@ export function createComment(
     });
   }
 
-  return { success: true, comment, notifications };
+  return { ok: true, comment, notifications };
 }
 
 type User = typeof users.$inferSelect;
