@@ -7,6 +7,8 @@ import { getCurrentUserId } from "~/lib/session";
 import { parseFormData } from "~/lib/validation";
 import { UserRole, users } from "~/db/schema";
 import { db } from "~/db";
+import { notify } from "~/lib/notifications.server";
+import { changeUserRole } from "~/lib/users.server";
 import { eq } from "drizzle-orm";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -52,15 +54,6 @@ function updateUser(
   return db
     .update(users)
     .set({ name, email, bio })
-    .where(eq(users.id, id))
-    .returning()
-    .get();
-}
-
-function updateUserRole(id: number, role: UserRole) {
-  return db
-    .update(users)
-    .set({ role })
     .where(eq(users.id, id))
     .returning()
     .get();
@@ -125,7 +118,11 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (intent === "update-role") {
     const { userId, role } = parsed.data;
-    updateUserRole(userId, role);
+    const result = changeUserRole(db, userId, role, currentUser.id);
+    if (!result.success) {
+      throw data(result.error, { status: 404 });
+    }
+    await notify(result.notifications);
     return { success: true };
   }
 
