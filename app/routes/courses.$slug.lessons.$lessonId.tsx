@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useFetcher, useNavigate } from "react-router";
+import { Link, useFetcher, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import type { Route } from "./+types/courses.$slug.lessons.$lessonId";
 import { getCurrentUserId } from "~/lib/session";
@@ -1008,6 +1008,16 @@ export default function LessonViewer({ loaderData }: Route.ComponentProps) {
   const fetcher = useFetcher({ key: `mark-complete-${lesson.id}` });
   const quizFetcher = useFetcher({ key: `quiz-${lesson.id}` });
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // The page scrolls inside the app layout's <main>, not the window, so the
+  // browser doesn't follow a #comment-{id} link after a client-side
+  // navigation (the bell and its toasts use navigate(link)). Scroll to it here.
+  useEffect(() => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    if (!id) return;
+    document.getElementById(id)?.scrollIntoView({ block: "start" });
+  }, [location.hash, location.key]);
 
   const isMarking =
     fetcher.state !== "idle" &&
