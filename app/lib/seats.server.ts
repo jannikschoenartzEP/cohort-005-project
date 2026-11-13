@@ -1,8 +1,15 @@
 import { and, eq } from "drizzle-orm";
-import { coupons, courses, enrollments, purchases, users } from "~/db/schema";
+import {
+  coupons,
+  courses,
+  enrollments,
+  purchases,
+  refunds,
+  users,
+  RefundStatus,
+} from "~/db/schema";
 import type { Db } from "~/db";
 import { personOf, type Notification } from "~/lib/notifications";
-import { getSeatAvailability } from "~/lib/refunds.server";
 
 // ─── Seats ───
 // A Student claiming a Seat on a Team Licence. See GLOSSARY.md (Seat, Claimed
@@ -12,6 +19,31 @@ export const SEAT_ON_HOLD =
   "This seat can't be claimed right now. Ask the person who shared it with you.";
 export const SEAT_REFUNDED =
   "This seat is no longer available. Ask the person who shared it with you.";
+
+type Seat = typeof coupons.$inferSelect;
+
+export type SeatAvailability = "available" | "claimed" | "on_hold" | "refunded";
+
+/**
+ * Whether a Seat can be claimed right now. A Team Licence's Unclaimed Seats are
+ * on hold while it has an Open Refund Request, and can never be claimed once
+ * that request is approved.
+ */
+export function getSeatAvailability(db: Db, seat: Seat): SeatAvailability {
+  if (seat.redeemedAt !== null) return "claimed";
+  if (seat.refundedAt !== null) return "refunded";
+  const openRefundRequest = db
+    .select({ id: refunds.id })
+    .from(refunds)
+    .where(
+      and(
+        eq(refunds.purchaseId, seat.purchaseId),
+        eq(refunds.status, RefundStatus.Open)
+      )
+    )
+    .get();
+  return openRefundRequest ? "on_hold" : "available";
+}
 
 export type ClaimResult =
   | { ok: true; courseSlug: string; notifications: Notification[] }

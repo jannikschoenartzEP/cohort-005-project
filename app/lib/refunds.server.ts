@@ -101,25 +101,6 @@ function getRefundRequestWithStatus(
     .get();
 }
 
-export type SeatAvailability = "available" | "claimed" | "on_hold" | "refunded";
-
-/**
- * Whether a Seat can be claimed right now. A Team Licence's Unclaimed Seats are
- * on hold while it has an Open Refund Request, and can never be claimed once
- * that request is approved.
- */
-export function getSeatAvailability(
-  db: Queryable,
-  seat: Seat
-): SeatAvailability {
-  if (isClaimed(seat)) return "claimed";
-  if (seat.refundedAt !== null) return "refunded";
-  if (getRefundRequestWithStatus(db, seat.purchaseId, RefundStatus.Open)) {
-    return "on_hold";
-  }
-  return "available";
-}
-
 // ─── Figures and rules ───
 
 function getLessonIds(db: Queryable, courseId: number): number[] {
