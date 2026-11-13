@@ -147,5 +147,42 @@ describe("createComment", () => {
         error: "Parent comment belongs to a different lesson",
       });
     });
+
+    it("rejects a Reply to a Reply", () => {
+      const question = postQuestion(lesson.id);
+      const reply = createComment(testDb, {
+        userId: base.instructor.id,
+        lessonId: lesson.id,
+        parentId: question.id,
+        body: "An answer",
+      });
+      if (!reply.success) throw new Error(reply.error);
+
+      const result = createComment(testDb, {
+        userId: base.user.id,
+        lessonId: lesson.id,
+        parentId: reply.comment.id,
+        body: "Thanks!",
+      });
+
+      expect(result).toEqual({
+        success: false,
+        error: "Replies can only be one level deep",
+      });
+    });
+
+    it("rejects a Reply to a Comment that does not exist", () => {
+      const result = createComment(testDb, {
+        userId: base.user.id,
+        lessonId: lesson.id,
+        parentId: 9999,
+        body: "Thanks!",
+      });
+
+      expect(result).toEqual({
+        success: false,
+        error: "Parent comment not found",
+      });
+    });
   });
 });

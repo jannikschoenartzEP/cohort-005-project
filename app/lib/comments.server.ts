@@ -59,6 +59,9 @@ export function createComment(
         error: "Parent comment belongs to a different lesson",
       };
     }
+    if (parent.parentId !== null) {
+      return { success: false, error: "Replies can only be one level deep" };
+    }
   }
 
   const comment = db
