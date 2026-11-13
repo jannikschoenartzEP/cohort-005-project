@@ -27,6 +27,15 @@ export function changeCourseStatus(
   platformAdminId: number,
   now: Date
 ): ChangeCourseStatusResult {
+  const before = db
+    .select({ status: courses.status })
+    .from(courses)
+    .where(eq(courses.id, courseId))
+    .get();
+  if (!before) {
+    return { success: false, error: "Course not found." };
+  }
+
   const course = db
     .update(courses)
     .set({ status, updatedAt: now.toISOString() })
@@ -37,7 +46,9 @@ export function changeCourseStatus(
     return { success: false, error: "Course not found." };
   }
 
-  if (course.instructorId === platformAdminId) {
+  // Nothing to announce if the status didn't change, or the Platform Admin
+  // changed their own course.
+  if (before.status === status || course.instructorId === platformAdminId) {
     return { success: true, notifications: [] };
   }
 

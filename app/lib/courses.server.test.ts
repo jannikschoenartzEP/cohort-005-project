@@ -96,4 +96,22 @@ describe("changing a course's status", () => {
 
     expect(result).toEqual({ success: true, notifications: [] });
   });
+
+  it("doesn't notify when the status stays the same", () => {
+    const result = changeCourseStatus(
+      db,
+      base.course.id,
+      CourseStatus.Draft,
+      platformAdmin.id,
+      NOW
+    );
+
+    expect(result).toEqual({ success: true, notifications: [] });
+  });
+
+  it("fails for a course that doesn't exist", () => {
+    const result = changeCourseStatus(db, 9999, CourseStatus.Published, platformAdmin.id, NOW);
+
+    expect(result).toEqual({ success: false, error: "Course not found." });
+  });
 });
