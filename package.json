@@ -18,6 +18,7 @@
     "db:generate": "drizzle-kit generate",
     "db:seed": "tsx scripts/seed.ts",
     "db:migrate": "drizzle-kit migrate",
+    "knock:push": "node --env-file-if-exists=.env node_modules/@knocklabs/cli/bin/run.js workflow push --all --commit",
     "loc": "git ls-files | grep -vE '(lock|.db|_snapshot.json)' | xargs wc -l"
   },
   "dependencies": {
