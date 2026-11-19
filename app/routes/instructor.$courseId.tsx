@@ -12,6 +12,7 @@ import { getCurrentUserId } from "~/lib/session";
 import { markdown } from "~/lib/text";
 import { CourseStatus, UserRole } from "~/db/schema";
 import { db } from "~/db";
+import { getBestAttempt } from "~/lib/quizzes.server";
 import {
   courses,
   categories,
@@ -22,9 +23,8 @@ import {
   lessonProgress,
   LessonProgressStatus,
   quizzes,
-  quizAttempts,
 } from "~/db/schema";
-import { eq, and, or, sql, desc, gt, gte } from "drizzle-orm";
+import { eq, and, or, sql, gt, gte } from "drizzle-orm";
 import { formatDuration, formatPrice } from "~/lib/utils";
 import { MonacoMarkdownEditor } from "~/components/monaco-markdown-editor";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
@@ -467,18 +467,6 @@ function getQuizByLessonId(lessonId: number) {
   return db.select().from(quizzes).where(eq(quizzes.lessonId, lessonId)).get();
 }
 
-function getBestAttempt(userId: number, quizId: number) {
-  return db
-    .select()
-    .from(quizAttempts)
-    .where(
-      and(eq(quizAttempts.userId, userId), eq(quizAttempts.quizId, quizId))
-    )
-    .orderBy(desc(quizAttempts.score))
-    .limit(1)
-    .get();
-}
-
 const courseEditorParamsSchema = z.object({
   courseId: z.coerce.number().int(),
 });
@@ -620,7 +608,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const progress = calculateProgress(enrollment.userId, courseId, false);
 
     const quizScores = lessonQuizzes.map((lq) => {
-      const bestAttempt = getBestAttempt(enrollment.userId, lq.quizId);
+      const bestAttempt = getBestAttempt(db, enrollment.userId, lq.quizId);
       return {
         quizId: lq.quizId,
         quizTitle: lq.quizTitle,

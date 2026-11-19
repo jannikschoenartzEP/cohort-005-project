@@ -16,6 +16,11 @@ import { isBookmarked, toggleBookmark } from "~/lib/bookmarks.server";
 import { getNote, saveNote } from "~/lib/notes.server";
 import { MAX_NOTE_LENGTH } from "~/lib/notes";
 import {
+  getBestAttempt,
+  getQuizForLesson,
+  submitAttempt,
+} from "~/lib/quizzes.server";
+import {
   CommentThread,
   type RenderedComment,
 } from "~/components/comment-thread";
@@ -27,11 +32,6 @@ import {
   lessonProgress,
   lessons,
   modules,
-  quizzes,
-  quizQuestions,
-  quizOptions,
-  quizAttempts,
-  quizAnswers,
   users,
   videoWatchEvents,
   LessonProgressStatus,
@@ -424,167 +424,6 @@ function getLessonThread(lessonId: number): ThreadComment[] {
   return topLevel.filter((c) => !c.deleted || c.replies.length > 0);
 }
 
-function getQuizByLessonId(lessonId: number) {
-  return db.select().from(quizzes).where(eq(quizzes.lessonId, lessonId)).get();
-}
-
-function getQuizWithQuestions(quizId: number) {
-  const quiz = db.select().from(quizzes).where(eq(quizzes.id, quizId)).get();
-  if (!quiz) return null;
-
-  const questions = db
-    .select()
-    .from(quizQuestions)
-    .where(eq(quizQuestions.quizId, quizId))
-    .orderBy(quizQuestions.position)
-    .all();
-
-  const questionsWithOptions = questions.map((question) => {
-    const options = db
-      .select()
-      .from(quizOptions)
-      .where(eq(quizOptions.questionId, question.id))
-      .all();
-    return { ...question, options };
-  });
-
-  return { ...quiz, questions: questionsWithOptions };
-}
-
-function getBestAttempt(userId: number, quizId: number) {
-  return db
-    .select()
-    .from(quizAttempts)
-    .where(
-      and(eq(quizAttempts.userId, userId), eq(quizAttempts.quizId, quizId))
-    )
-    .orderBy(desc(quizAttempts.score))
-    .limit(1)
-    .get();
-}
-
-function calculateGrade(score: any): any {
-  try {
-    if (score >= 0.9) return "A";
-    if (score >= 0.8) return "B";
-    if (score >= 0.7) return "C";
-    if (score >= 0.6) return "D";
-    return "F";
-  } catch (e) {
-    console.log(e);
-    return "F";
-  }
-}
-
-function computeResult(userId: any, quizId: any, selectedAnswers: any): any {
-  try {
-    const quiz = db.select().from(quizzes).where(eq(quizzes.id, quizId)).get();
-    if (!quiz) {
-      console.log("quiz not found");
-      return null;
-    }
-
-    const questions = db
-      .select()
-      .from(quizQuestions)
-      .where(eq(quizQuestions.quizId, quizId))
-      .orderBy(quizQuestions.position)
-      .all();
-
-    let correct = 0;
-    let total = questions.length;
-    const questionResults: any[] = [];
-
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
-      const selected = selectedAnswers[q.id];
-
-      if (!selected) {
-        questionResults.push({
-          questionId: q.id,
-          correct: false,
-          selectedOptionId: null,
-          correctOptionId: null,
-        });
-        continue;
-      }
-
-      let correctOptionId = null;
-      if (q.questionType === "multiple_choice") {
-        const opts = db
-          .select()
-          .from(quizOptions)
-          .where(eq(quizOptions.questionId, q.id))
-          .all();
-        const correctOpt = opts.find((o) => o.isCorrect === true);
-        correctOptionId = correctOpt ? correctOpt.id : null;
-      } else if (q.questionType === "true_false") {
-        const correctOpt = db
-          .select()
-          .from(quizOptions)
-          .where(
-            and(
-              eq(quizOptions.questionId, q.id),
-              eq(quizOptions.isCorrect, true)
-            )
-          )
-          .get();
-        correctOptionId = correctOpt ? correctOpt.id : null;
-      }
-
-      const isCorrect = selected === correctOptionId;
-      if (isCorrect) correct++;
-
-      questionResults.push({
-        questionId: q.id,
-        correct: isCorrect,
-        selectedOptionId: selected,
-        correctOptionId,
-      });
-    }
-
-    const scoreValue = total > 0 ? correct / total : 0;
-    const passed = scoreValue > 0.7;
-    const grade = calculateGrade(scoreValue);
-
-    const attempt = db
-      .insert(quizAttempts)
-      .values({
-        userId,
-        quizId,
-        score: scoreValue,
-        passed,
-      })
-      .returning()
-      .get();
-
-    for (const result of questionResults) {
-      if (result.selectedOptionId !== null) {
-        db.insert(quizAnswers)
-          .values({
-            attemptId: attempt.id,
-            questionId: result.questionId,
-            selectedOptionId: result.selectedOptionId,
-          })
-          .run();
-      }
-    }
-
-    return {
-      attemptId: attempt.id,
-      score: scoreValue,
-      passed,
-      grade,
-      totalCorrect: correct,
-      totalQuestions: total,
-      questionResults,
-    };
-  } catch (e) {
-    console.log(e);
-    return null;
-  }
-}
-
 /**
  * Renders every comment body to sanitised HTML, preserving the reply nesting.
  * Comments are untrusted input, so this must be renderComment — never
@@ -743,50 +582,26 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const nextLesson =
     currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
-  // Check for quiz attached to this lesson
-  const quizRecord = getQuizByLessonId(lessonId);
-  let quiz: {
-    id: number;
-    title: string;
-    passingScore: number;
-    questions: Array<{
-      id: number;
-      questionText: string;
-      questionType: string;
-      position: number;
-      options: Array<{ id: number; optionText: string }>;
-    }>;
-  } | null = null;
-  let bestAttempt: { score: number; passed: boolean } | null = null;
+  // Strip isCorrect from options so answers aren't leaked to the client
+  const quizData = getQuizForLesson(db, lessonId);
+  const quiz = quizData && {
+    id: quizData.id,
+    title: quizData.title,
+    passingScore: quizData.passingScore,
+    questions: quizData.questions.map((q) => ({
+      id: q.id,
+      questionText: q.questionText,
+      questionType: q.questionType,
+      position: q.position,
+      options: q.options.map((o) => ({ id: o.id, optionText: o.optionText })),
+    })),
+  };
 
-  if (quizRecord) {
-    const quizData = getQuizWithQuestions(quizRecord.id);
-    if (quizData) {
-      // Strip isCorrect from options so answers aren't leaked to the client
-      quiz = {
-        id: quizData.id,
-        title: quizData.title,
-        passingScore: quizData.passingScore,
-        questions: quizData.questions.map((q) => ({
-          id: q.id,
-          questionText: q.questionText,
-          questionType: q.questionType,
-          position: q.position,
-          options: q.options.map((o) => ({
-            id: o.id,
-            optionText: o.optionText,
-          })),
-        })),
-      };
-    }
-
-    if (currentUserId) {
-      const best = getBestAttempt(currentUserId, quizRecord.id);
-      if (best) {
-        bestAttempt = { score: best.score, passed: best.passed };
-      }
-    }
-  }
+  const best =
+    quizData && currentUserId
+      ? getBestAttempt(db, currentUserId, quizData.id)
+      : undefined;
+  const bestAttempt = best ? { score: best.score, passed: best.passed } : null;
 
   return {
     course: {
@@ -956,11 +771,6 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   if (intent === "submit-quiz") {
-    const quizId = Number(formData.get("quizId"));
-    if (isNaN(quizId)) {
-      throw data("Invalid quiz ID", { status: 400 });
-    }
-
     // Collect answers: form fields named "question-{questionId}" with value = optionId
     const selectedAnswers: Record<number, number> = {};
     for (const [key, value] of formData.entries()) {
@@ -973,9 +783,9 @@ export async function action({ params, request }: Route.ActionArgs) {
       }
     }
 
-    const result = computeResult(currentUserId, quizId, selectedAnswers);
+    const result = submitAttempt(db, currentUserId, lessonId, selectedAnswers);
     if (!result) {
-      throw data("Failed to score quiz", { status: 500 });
+      throw data("This lesson has no quiz.", { status: 404 });
     }
 
     return { quizResult: result };
@@ -1703,7 +1513,6 @@ function QuizSection({
 
         <quizFetcher.Form method="post" onSubmit={() => setRetaking(false)}>
           <input type="hidden" name="intent" value="submit-quiz" />
-          <input type="hidden" name="quizId" value={quiz.id} />
 
           <div className="space-y-6">
             {quiz.questions.map((question, qIndex) => (

@@ -8,6 +8,7 @@ import { Button } from "~/components/ui/button";
 import { AlertTriangle, ArrowLeft, Users, Award } from "lucide-react";
 import { data, isRouteErrorResponse } from "react-router";
 import { db } from "~/db";
+import { getBestAttempt } from "~/lib/quizzes.server";
 import {
   modules,
   lessons,
@@ -15,12 +16,11 @@ import {
   courses,
   enrollments,
   quizzes,
-  quizAttempts,
   lessonProgress,
   purchases,
   LessonProgressStatus,
 } from "~/db/schema";
-import { eq, and, or, sql, desc, inArray, max } from "drizzle-orm";
+import { eq, and, or, sql, inArray, max } from "drizzle-orm";
 
 function getUserById(id: number) {
   return db.select().from(users).where(eq(users.id, id)).get();
@@ -83,18 +83,6 @@ function getCourseLapsedStudents(courseId: number, enrolledUserIds: number[]) {
 
 function getQuizByLessonId(lessonId: number) {
   return db.select().from(quizzes).where(eq(quizzes.lessonId, lessonId)).get();
-}
-
-function getBestAttempt(userId: number, quizId: number) {
-  return db
-    .select()
-    .from(quizAttempts)
-    .where(
-      and(eq(quizAttempts.userId, userId), eq(quizAttempts.quizId, quizId))
-    )
-    .orderBy(desc(quizAttempts.score))
-    .limit(1)
-    .get();
 }
 
 function getCourseLessonIds(courseId: number): number[] {
@@ -280,7 +268,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
     // Get best quiz attempt for each quiz in this course
     const quizScores = lessonQuizzes.map((lq) => {
-      const bestAttempt = getBestAttempt(enrollment.userId, lq.quizId);
+      const bestAttempt = getBestAttempt(db, enrollment.userId, lq.quizId);
       return {
         quizId: lq.quizId,
         quizTitle: lq.quizTitle,

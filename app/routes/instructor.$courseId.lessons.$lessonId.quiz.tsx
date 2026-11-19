@@ -10,14 +10,9 @@ import {
   courses,
   modules,
   lessons,
-  quizzes,
-  quizQuestions,
-  quizOptions,
-  quizAttempts,
-  quizAnswers,
 } from "~/db/schema";
 import { db } from "~/db";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -51,6 +46,11 @@ import {
 import { data, isRouteErrorResponse } from "react-router";
 import { z } from "zod";
 import { parseFormData, parseParams } from "~/lib/validation";
+import {
+  deleteQuizForLesson,
+  getQuizForLesson,
+  saveQuiz,
+} from "~/lib/quizzes.server";
 
 const quizParamsSchema = z.object({
   courseId: z.coerce.number().int(),
@@ -129,140 +129,6 @@ function getLessonById(id: number) {
   return db.select().from(lessons).where(eq(lessons.id, id)).get();
 }
 
-function getQuizById(id: number) {
-  return db.select().from(quizzes).where(eq(quizzes.id, id)).get();
-}
-
-function getQuizByLessonId(lessonId: number) {
-  return db.select().from(quizzes).where(eq(quizzes.lessonId, lessonId)).get();
-}
-
-function getQuestionsByQuiz(quizId: number) {
-  return db
-    .select()
-    .from(quizQuestions)
-    .where(eq(quizQuestions.quizId, quizId))
-    .orderBy(quizQuestions.position)
-    .all();
-}
-
-function getQuizWithQuestions(quizId: number) {
-  const quiz = getQuizById(quizId);
-  if (!quiz) return null;
-
-  const questions = db
-    .select()
-    .from(quizQuestions)
-    .where(eq(quizQuestions.quizId, quizId))
-    .orderBy(quizQuestions.position)
-    .all();
-
-  const questionsWithOptions = questions.map((question) => {
-    const options = db
-      .select()
-      .from(quizOptions)
-      .where(eq(quizOptions.questionId, question.id))
-      .all();
-    return { ...question, options };
-  });
-
-  return { ...quiz, questions: questionsWithOptions };
-}
-
-function createQuiz(lessonId: number, title: string, passingScore: number) {
-  return db
-    .insert(quizzes)
-    .values({ lessonId, title, passingScore })
-    .returning()
-    .get();
-}
-
-function updateQuiz(
-  id: number,
-  title: string | null,
-  passingScore: number | null
-) {
-  const updates: Record<string, unknown> = {};
-  if (title !== null) updates.title = title;
-  if (passingScore !== null) updates.passingScore = passingScore;
-
-  if (Object.keys(updates).length === 0) {
-    return getQuizById(id);
-  }
-
-  return db
-    .update(quizzes)
-    .set(updates)
-    .where(eq(quizzes.id, id))
-    .returning()
-    .get();
-}
-
-function deleteQuiz(id: number) {
-  // Cascade: delete answers -> attempts -> options -> questions -> quiz
-  const questions = getQuestionsByQuiz(id);
-  for (const question of questions) {
-    db.delete(quizOptions).where(eq(quizOptions.questionId, question.id)).run();
-  }
-
-  const attempts = db
-    .select()
-    .from(quizAttempts)
-    .where(eq(quizAttempts.quizId, id))
-    .all();
-  for (const attempt of attempts) {
-    db.delete(quizAnswers).where(eq(quizAnswers.attemptId, attempt.id)).run();
-  }
-
-  db.delete(quizAttempts).where(eq(quizAttempts.quizId, id)).run();
-  db.delete(quizQuestions).where(eq(quizQuestions.quizId, id)).run();
-  return db.delete(quizzes).where(eq(quizzes.id, id)).returning().get();
-}
-
-function createQuestion(
-  quizId: number,
-  questionText: string,
-  questionType: QuestionType,
-  position: number | null
-) {
-  const pos =
-    position ??
-    db
-      .select({
-        max: sql<number>`coalesce(max(${quizQuestions.position}), 0)`,
-      })
-      .from(quizQuestions)
-      .where(eq(quizQuestions.quizId, quizId))
-      .get()!.max + 1;
-
-  return db
-    .insert(quizQuestions)
-    .values({ quizId, questionText, questionType, position: pos })
-    .returning()
-    .get();
-}
-
-function deleteQuestion(id: number) {
-  db.delete(quizOptions).where(eq(quizOptions.questionId, id)).run();
-  return db
-    .delete(quizQuestions)
-    .where(eq(quizQuestions.id, id))
-    .returning()
-    .get();
-}
-
-function createOption(
-  questionId: number,
-  optionText: string,
-  isCorrect: boolean
-) {
-  return db
-    .insert(quizOptions)
-    .values({ questionId, optionText, isCorrect })
-    .returning()
-    .get();
-}
-
 // ─── Meta ───
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -324,10 +190,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   }
 
   // Load existing quiz if present
-  const existingQuizBasic = getQuizByLessonId(lessonId);
-  const existingQuiz = existingQuizBasic
-    ? getQuizWithQuestions(existingQuizBasic.id)
-    : null;
+  const existingQuiz = getQuizForLesson(db, lessonId);
 
   return { course, lesson, module: mod, existingQuiz };
 }
@@ -396,37 +259,17 @@ export async function action({ params, request }: Route.ActionArgs) {
       return data({ error: "Invalid quiz data." }, { status: 400 });
     }
 
-    // Delete existing quiz if present
-    const existingQuiz = getQuizByLessonId(lessonId);
-    if (existingQuiz) {
-      deleteQuiz(existingQuiz.id);
-    }
-
-    // Create the quiz
-    const quiz = createQuiz(
-      lessonId,
-      wizardData.title.trim(),
-      wizardData.passingScore / 100
-    );
-
-    // Create questions and options
-    for (let qi = 0; qi < wizardData.questions.length; qi++) {
-      const q = wizardData.questions[qi];
-      const question = createQuestion(quiz.id, q.text.trim(), q.type, qi + 1);
-
-      for (const opt of q.options) {
-        createOption(question.id, opt.text.trim(), opt.isCorrect);
-      }
-    }
+    saveQuiz(db, lessonId, {
+      title: wizardData.title,
+      passingScore: wizardData.passingScore / 100,
+      questions: wizardData.questions,
+    });
 
     return { success: true };
   }
 
   if (intent === "delete-quiz") {
-    const existingQuiz = getQuizByLessonId(lessonId);
-    if (existingQuiz) {
-      deleteQuiz(existingQuiz.id);
-    }
+    deleteQuizForLesson(db, lessonId);
     return { success: true, deleted: true };
   }
 
