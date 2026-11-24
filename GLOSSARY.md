@@ -15,18 +15,30 @@ A person who builds and owns courses, and sees the Students enrolled on them.
 _Avoid_: Teacher, Author, Creator
 
 **Platform Admin**:
-A member of Cadence staff who runs the platform. Only a Platform Admin decides Refund Requests.
+A member of Cadence staff who runs the platform. Only a Platform Admin decides Refund Requests. A Platform Admin can do anything an Instructor can on an existing course, but never owns a course.
 _Avoid_: Admin (on its own), the team, Staff
 
 **Team Admin**:
 A Student who buys and manages a Team Licence. A Team Admin has no say over Refund Requests.
 _Avoid_: Admin (on its own)
 
+**Manage (a course)**:
+To speak for a course: edit it, see its Students and answer its Discussion Questions. The course's Instructor and every Platform Admin manage it, and can always see its lessons.
+_Avoid_: Staff, Course Team, Course Owner (Platform Admins don't own courses)
+
 ### Enrollment
 
 **Enrollment**:
 A Student's place on a course, which lets them take it. A Student has at most one Enrollment per course, whether it came from an Individual Purchase or a Claimed Seat.
 _Avoid_: Place on a course, Access
+
+**Take (a course)**:
+What a Student does with a course they're Enrolled on and aren't Country-Locked from: watch its lessons, do its quizzes, join its Discussions.
+_Avoid_: Access, View content
+
+**Country Lock**:
+The rule that an Individual Purchase or Seat bought with a Country Discount can only be taken, or claimed, from the country it was bought in. A Student is Country-Locked when everything giving them their Enrollment is locked to another country: they keep the Enrollment but can't take the course until they're back.
+_Avoid_: PPP block, Geo-block
 
 **Lapsed**:
 A Student who has lost their Enrollment on a course but still has progress on it.
@@ -38,7 +50,7 @@ _Avoid_: Viewed, Progress
 ### Discussions
 
 **Discussion Question**:
-A top-level comment on a lesson by anyone other than the course's Instructor.
+A top-level comment on a lesson by anyone who doesn't manage the course.
 _Avoid_: Question (on its own, which clashes with quiz questions), Thread
 
 **Discussion Reply**:
@@ -57,6 +69,10 @@ A Purchase a Student makes for themselves. It gives the buyer an Enrollment.
 **Team Licence**:
 A Purchase a Team Admin makes for others. It grants Seats, not an Enrollment; the buyer can't take the course through it.
 _Avoid_: Team purchase, Bulk purchase
+
+**Country Discount**:
+A cut off a course's price that Cadence gives buyers in some countries, set by the country they buy from. A Purchase made with one carries a Country Lock.
+_Avoid_: PPP, Purchasing-power price, Regional price
 
 **Seat**:
 One place on a Team Licence that a Student can claim to get an Enrollment.
