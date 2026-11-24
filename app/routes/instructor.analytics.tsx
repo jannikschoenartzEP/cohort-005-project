@@ -1,26 +1,6 @@
+import { AlertTriangle, Rocket } from "lucide-react";
 import { Link, isRouteErrorResponse, useSearchParams } from "react-router";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import type { Route } from "./+types/instructor.analytics";
-import { requireInstructorOrAdmin } from "~/lib/access.server";
-import { db } from "~/db";
-import {
-  ANALYTICS_RANGES,
-  PLATFORM_FEE_PERCENT,
-  formatBucket,
-  formatMoney,
-} from "~/lib/analytics";
-import {
-  getInstructorAnalytics,
-  type CourseCountryRevenue,
-  type CourseFunnel,
-  type CourseProgressSummary,
-  type FunnelLesson,
-  type QuizPassRate,
-  type RefundExposure,
-  type RevenueSeries,
-} from "~/lib/instructor-analytics.server";
-import { countryName } from "~/lib/ppp";
-import { REFUND_WINDOW_DAYS } from "~/lib/refund-rules";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import {
@@ -37,8 +17,27 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import { AlertTriangle, Rocket } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { requireInstructorOrAdmin } from "~/lib/access.server";
+import {
+  ANALYTICS_RANGES,
+  PLATFORM_FEE_PERCENT,
+  formatBucket,
+  formatMoney,
+} from "~/lib/analytics";
+import { countryName } from "~/lib/ppp";
+import { REFUND_WINDOW_DAYS } from "~/lib/refund-rules";
+import {
+  getInstructorAnalytics,
+  type CourseCountryRevenue,
+  type CourseFunnel,
+  type CourseProgressSummary,
+  type FunnelLesson,
+  type QuizPassRate,
+  type RefundExposure,
+  type RevenueSeries,
+} from "~/modules/instructor-analytics/index.server";
+import type { Route } from "./+types/instructor.analytics";
 
 // ─── Instructor Analytics ───
 // What an instructor earned, and when. Three money figures rather than one:
@@ -66,7 +65,7 @@ export function meta() {
 
 export async function loader({ request, url }: Route.LoaderArgs) {
   const viewer = await requireInstructorOrAdmin(request);
-  return getInstructorAnalytics(db, viewer, url.searchParams, new Date());
+  return getInstructorAnalytics(viewer, url.searchParams, new Date());
 }
 
 function MoneyCard({
