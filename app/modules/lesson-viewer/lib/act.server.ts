@@ -17,7 +17,7 @@ import { toggleBookmark } from "~/lib/bookmarks.server";
 import { saveNote } from "~/lib/notes.server";
 import { MAX_NOTE_LENGTH } from "~/lib/notes";
 import { parseFormData } from "~/lib/validation";
-import { lessonRef } from "./ref.server";
+import { lessonRef, type LessonParams } from "./ref.server";
 import { markLessonComplete } from "./progress.server";
 import { getCommentById } from "./thread.server";
 import { computeResult } from "./quiz.server";
@@ -67,7 +67,7 @@ const INTENT_CAPABILITY: Record<string, Capability | undefined> = {
 
 export async function handleLessonAction(
   request: Request,
-  params: { slug: string; lessonId: string }
+  params: LessonParams
 ) {
   const formData = await request.formData();
   const intent = formData.get("intent");

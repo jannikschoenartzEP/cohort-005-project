@@ -1,7 +1,6 @@
 import { loadLessonPage } from "./lib/load.server";
 import { handleLessonAction } from "./lib/act.server";
-
-type LessonParams = { slug: string; lessonId: string };
+import type { LessonParams } from "./lib/ref.server";
 
 /**
  * Everything the Lesson page shows. Someone who cannot view the content gets

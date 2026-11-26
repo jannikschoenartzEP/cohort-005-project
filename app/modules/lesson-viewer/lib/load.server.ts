@@ -7,7 +7,7 @@ import { db } from "~/db";
 import { isBookmarked } from "~/lib/bookmarks.server";
 import { getNote } from "~/lib/notes.server";
 import { renderMarkdown } from "~/lib/markdown.server";
-import { lessonRef } from "./ref.server";
+import { lessonRef, type LessonParams } from "./ref.server";
 import {
   flattenCourseLessons,
   getCourseWithDetails,
@@ -29,10 +29,7 @@ import {
   getQuizWithQuestions,
 } from "./quiz.server";
 
-export async function loadLessonPage(
-  request: Request,
-  params: { slug: string; lessonId: string }
-) {
+export async function loadLessonPage(request: Request, params: LessonParams) {
   // Not found covers an unknown course, a malformed lesson id, and a lesson
   // from another course.
   const decisions = await coursePermissions.getCourseDecisions(
