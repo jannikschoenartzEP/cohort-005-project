@@ -4,7 +4,7 @@ pull request #{{PR_NUMBER}}, and you know only what you read.
 Review it with the code-review skill, .agents/skills/code-review/SKILL.md:
 
 - fixed point: `origin/{{BASE_REF}}`
-- spec: /tmp/review-spec.md
+- spec: .factory/review-spec.md
 - standards: CODING_STANDARDS.md
 
 A split that `scripts/check-file-tokens.js` forced is in scope for any
@@ -28,7 +28,7 @@ output. Its body says what decision it needs.
 
 ## The verdict
 
-Write your verdict on the branch, after your fixes, to /tmp/review-verdict.md:
+Write your verdict on the branch, after your fixes, to .factory/review-verdict.md:
 
     ## Standards: PASS | CHANGES REQUESTED
     One line of reasoning, then each finding you fixed, worst first: its
@@ -47,7 +47,7 @@ output. They appear there once, not in your text.
 ## Evidence
 
 When your fixes change the UI, save an after screenshot of each as a PNG in
-/tmp/evidence/. Check the PR's own after state in the browser too; its before
+.factory/evidence/. Check the PR's own after state in the browser too; its before
 is already in the PR body. Reference each screenshot in the verdict by its
-absolute path, e.g. `![after](/tmp/evidence/after.png)`. The workflow uploads
+path, e.g. `![after](.factory/evidence/after.png)`. The workflow uploads
 them.

@@ -290,9 +290,10 @@ jobs:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: |
           set -euo pipefail
+          mkdir -p .factory
           gh issue view "$SPEC" --json number,title,body \
-            --jq '"# " + .title + "\n\n" + .body' > /tmp/spec.md
-          cat /tmp/spec.md
+            --jq '"# " + .title + "\n\n" + .body' > .factory/spec.md
+          cat .factory/spec.md
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
@@ -345,7 +346,7 @@ jobs:
           total=$(jq '.tickets | length' /tmp/queue.json)
           echo "Writing $total tickets for spec #${SPEC}."
 
-          # A ticket's screenshots are /tmp/evidence/<position>-*.png. --attach
+          # A ticket's screenshots are .factory/evidence/<position>-*.png. --attach
           # uploads them and swaps each path in the body for its URL.
           # nullglob: none means no --attach.
           shopt -s nullglob
@@ -372,7 +373,7 @@ jobs:
             } > /tmp/ticket-body.md
 
             attach=()
-            for png in /tmp/evidence/"${position}"-*.png; do attach+=(--attach "$png"); done
+            for png in .factory/evidence/"${position}"-*.png; do attach+=(--attach "$png"); done
 
             gh issue create \
               --title "$title" \
@@ -467,6 +468,7 @@ jobs:
           # own comments pass that (FACTORY_PAT posts them as you), so its
           # status lines -- "Building", the failure that parked a ticket --
           # carry a hidden `<!-- factory:status -->` and are dropped here.
+          mkdir -p .factory
           gh issue view "$TICKET" --json number,title,body,comments \
             | jq '.comments |= map(select(
                 (.authorAssociation | IN("OWNER", "MEMBER", "COLLABORATOR"))
@@ -478,10 +480,10 @@ jobs:
                then "\n\n## Comments\n"
                  + ([.comments[] | "\n### " + .author.login + " (" + .createdAt + ")\n\n" + .body + "\n"] | join(""))
                else "" end)
-          ' /tmp/ticket.json > /tmp/ticket.md
+          ' /tmp/ticket.json > .factory/ticket.md
           gh issue view "$SPEC" --json number,title,body \
-            --jq '"# Spec: " + .title + "\n\n" + .body' > /tmp/spec.md
-          cat /tmp/ticket.md
+            --jq '"# Spec: " + .title + "\n\n" + .body' > .factory/spec.md
+          cat .factory/ticket.md
 
       - name: Open the branch
         id: branch
@@ -546,27 +548,27 @@ jobs:
         run: |
           set -euo pipefail
           title=$(gh issue view "$TICKET" --json title --jq .title)
-          [ -s /tmp/pr-body.md ] || echo "Built by the implement-spec chain." > /tmp/pr-body.md
+          [ -s .factory/pr-body.md ] || echo "Built by the implement-spec chain." > .factory/pr-body.md
           {
             echo ""
             echo "---"
             echo ""
             echo "Closes #${TICKET}. Part of spec #${SPEC}."
             echo "Built unattended by [this run](${RUN_URL}); nobody has read it yet."
-          } >> /tmp/pr-body.md
+          } >> .factory/pr-body.md
 
-          # Uploads the agent's screenshots and swaps each /tmp/evidence path
+          # Uploads the agent's screenshots and swaps each .factory/evidence path
           # in the body for its URL. nullglob: none means no --attach.
           shopt -s nullglob
           attach=()
-          for png in /tmp/evidence/*.png; do attach+=(--attach "$png"); done
+          for png in .factory/evidence/*.png; do attach+=(--attach "$png"); done
 
           url="$(gh pr create \
             --draft \
             --base "${{ github.event.repository.default_branch || 'main' }}" \
             --head "$BRANCH" \
             --title "$title" \
-            --body-file /tmp/pr-body.md \
+            --body-file .factory/pr-body.md \
             "${attach[@]}")"
 
           echo "url=$url" >> "$GITHUB_OUTPUT"

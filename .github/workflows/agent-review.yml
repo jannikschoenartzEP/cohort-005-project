@@ -138,18 +138,19 @@ jobs:
           #    which is the one thing here we do read from the PR. If there is
           #    no `Closes #n`, the Spec axis reports "no spec available"
           #    rather than inventing one.
-          gh pr view "$PR_NUMBER" --json body --jq .body > /tmp/pr-body.md
-          issue=$(grep -oiE '(closes|fixes|resolves) #[0-9]+' /tmp/pr-body.md \
+          mkdir -p .factory
+          gh pr view "$PR_NUMBER" --json body --jq .body > .factory/pr-body.md
+          issue=$(grep -oiE '(closes|fixes|resolves) #[0-9]+' .factory/pr-body.md \
             | head -n1 | grep -oE '[0-9]+' || true)
           if [ -n "$issue" ]; then
             gh issue view "$issue" --json number,title,body \
               --jq '"# Ticket #" + (.number|tostring) + ": " + .title + "\n\n" + .body' \
-              > /tmp/review-spec.md
+              > .factory/review-spec.md
           else
             echo "No spec available: this PR does not say which ticket it closes." \
-              > /tmp/review-spec.md
+              > .factory/review-spec.md
           fi
-          cat /tmp/review-spec.md
+          cat .factory/review-spec.md
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
@@ -267,15 +268,15 @@ jobs:
           FALLBACK_URL: ${{ steps.fallback.outputs.url }}
         run: |
           set -euo pipefail
-          [ -s /tmp/review-verdict.md ] || \
+          [ -s .factory/review-verdict.md ] || \
             echo "The review run produced no verdict. See the logs. Re-add \`agent:review\` to retry." \
-              > /tmp/review-verdict.md
+              > .factory/review-verdict.md
           if [ "$FALLBACK" = "true" ]; then
             {
               echo ""
               echo "The push of this review's fixes to \`$BRANCH\` was **rejected**: the branch moved during this run. Nothing was force-pushed."
               echo "The fixes are on \`$FALLBACK_BRANCH\`${FALLBACK_URL:+, opened as ${FALLBACK_URL}}. Labelled \`agent:blocked\`: keep one of the two PRs."
-            } >> /tmp/review-verdict.md
+            } >> .factory/review-verdict.md
           fi
           {
             echo ""
@@ -283,13 +284,13 @@ jobs:
             echo ""
             echo "Reviewed by the review workflow — [logs](${RUN_URL}). This run"
             echo "saw the diff, the standards and the ticket, and nothing else."
-          } >> /tmp/review-verdict.md
-          # Uploads the agent's screenshots and swaps each /tmp/evidence path
+          } >> .factory/review-verdict.md
+          # Uploads the agent's screenshots and swaps each .factory/evidence path
           # in the body for its URL. nullglob: none means no --attach.
           shopt -s nullglob
           attach=()
-          for png in /tmp/evidence/*.png; do attach+=(--attach "$png"); done
-          gh pr comment "$PR_NUMBER" --body-file /tmp/review-verdict.md "${attach[@]}"
+          for png in .factory/evidence/*.png; do attach+=(--attach "$png"); done
+          gh pr comment "$PR_NUMBER" --body-file .factory/review-verdict.md "${attach[@]}"
 
       - name: Post the inline comments
         # One review, event COMMENT, with a comment on each line the agent
@@ -320,7 +321,7 @@ jobs:
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: |
           set -euo pipefail
-          if grep -q '## Standards:' /tmp/review-verdict.md; then
+          if grep -q '## Standards:' .factory/review-verdict.md; then
             gh pr ready "$PR_NUMBER"
           else
             echo "No verdict, so the PR stays a draft."

@@ -12,7 +12,7 @@ import { addLeftFindings } from "./left-findings";
 import { reviewSchema } from "./review-schema";
 
 const BASE_REF = required("BASE_REF");
-const VERDICT = "/tmp/review-verdict.md";
+const VERDICT = ".factory/review-verdict.md";
 
 // The agent fixes and commits, writes the verdict file, and hands back the
 // findings it left. This script lists those findings in the verdict. The
