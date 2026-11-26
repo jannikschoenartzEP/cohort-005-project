@@ -5,7 +5,11 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Textarea } from "~/components/ui/textarea";
 import { cn, formatRelativeTime } from "~/lib/utils";
-import { noteDraft, type NoteDraftStatus } from "~/modules/lesson-notes";
+import {
+  noteDraft,
+  type NoteDraft,
+  type NoteDraftStatus,
+} from "~/modules/lesson-notes";
 
 export type LessonNoteProps = {
   note: { body: string; updatedAt: string } | null;
@@ -20,8 +24,11 @@ export type LessonNoteProps = {
 export function LessonNote({ note }: LessonNoteProps) {
   const fetcher = useFetcher<{ ok: boolean; error?: string }>();
   const [body, setBody] = useState(note?.body ?? "");
+  const [submittedBody, setSubmittedBody] = useState<string | null>(null);
   const isSaving = fetcher.state !== "idle";
-  const error = fetcher.data?.error;
+  // A refusal is about the text that was sent; once the Student edits it,
+  // show the draft's own status instead.
+  const error = body === submittedBody ? fetcher.data?.error : undefined;
   const draft = noteDraft(body, note?.body ?? null);
 
   return (
@@ -29,7 +36,11 @@ export function LessonNote({ note }: LessonNoteProps) {
       <CardContent>
         <LessonNoteHeader />
 
-        <fetcher.Form method="post" className="space-y-2">
+        <fetcher.Form
+          method="post"
+          className="space-y-2"
+          onSubmit={() => setSubmittedBody(body)}
+        >
           <input type="hidden" name="intent" value="save-note" />
           <Textarea
             name="body"
@@ -52,20 +63,26 @@ export function LessonNote({ note }: LessonNoteProps) {
               status={draft.status}
               updatedAt={note?.updatedAt}
             />
-            <span
-              className={cn(
-                "ml-auto text-xs",
-                draft.status === "too-long"
-                  ? "text-destructive"
-                  : "text-muted-foreground"
-              )}
-            >
-              {draft.counter}
-            </span>
+            <NoteCounter draft={draft} />
           </div>
         </fetcher.Form>
       </CardContent>
     </Card>
+  );
+}
+
+function NoteCounter({ draft }: { draft: NoteDraft }) {
+  return (
+    <span
+      className={cn(
+        "ml-auto text-xs",
+        draft.status === "too-long"
+          ? "text-destructive"
+          : "text-muted-foreground"
+      )}
+    >
+      {draft.counter}
+    </span>
   );
 }
 
