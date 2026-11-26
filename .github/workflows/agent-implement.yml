@@ -130,7 +130,12 @@ jobs:
         run: npm ci
 
       - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
+        # Org policy disables bypass mode, so this allowlist approves the
+        # commands the agent needs. See shared/ci-claude-settings.json.
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          mkdir -p ~/.claude
+          cp .sandcastle/agent-workflows/shared/ci-claude-settings.json ~/.claude/settings.json
 
       - name: Migrate and seed the database
         # The agent gets a real database, because half of this repo's checks
