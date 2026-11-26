@@ -25,11 +25,16 @@ export const writeJson = (filename: string, value: unknown): void => {
 // subscription. To bill the API instead, pass ANTHROPIC_API_KEY here and in
 // the workflow's env in place of CLAUDE_CODE_OAUTH_TOKEN.
 //
-// Sandcastle runs every agent with its permission checks skipped, so it can
-// use any tool. Claude Code also accepts `permissionMode: "auto"` here for
-// AI-mediated approvals instead (Claude only; other agents don't offer it).
+// Sandcastle would run the agent with its permission checks skipped, but the
+// org's managed Claude Code settings disable bypass mode, so that flag is
+// ignored. In --print mode nobody can approve anything, so every action that
+// needs approval is denied. `acceptEdits` approves file edits inside the
+// working directory. The org policy also forces Claude Code's sandbox on,
+// which auto-approves Bash commands that stay inside it. Anything the agent
+// needs to read or write must therefore sit in the checkout: see .factory/.
 export const claudeAgent = () =>
   sandcastle.claudeCode("claude-opus-5-5", {
+    permissionMode: "acceptEdits",
     env: {
       CLAUDE_CODE_OAUTH_TOKEN: required("CLAUDE_CODE_OAUTH_TOKEN"),
     },

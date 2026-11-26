@@ -41,3 +41,8 @@ stryker.log
 
 # Emails written locally instead of sent
 .outbox/
+
+# Hand-off files between the factory workflows and their agent: the ticket,
+# the PR body, screenshots. Inside the checkout because the org policy keeps
+# the agent out of /tmp. Written fresh on every run.
+/.factory/

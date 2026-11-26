@@ -120,15 +120,15 @@ jobs:
           # only when the person who wrote it has write access to this repo,
           # and is not one of the factory's own status lines (they carry a
           # hidden `<!-- factory:status -->`).
-          mkdir -p /tmp/explore
+          mkdir -p .factory/explore
           gh issue list --state open --label "agent:explore" --limit 100 \
             --json number,title,body,createdAt,comments \
             | jq 'map(.comments |= map(select(
                 (.authorAssociation | IN("OWNER", "MEMBER", "COLLABORATOR"))
                 and (.body | contains("<!-- factory:status -->") | not))))' \
-            > /tmp/explore/issues.json
+            > .factory/explore/issues.json
 
-          numbers="$(jq -c '[.[].number] | sort' /tmp/explore/issues.json)"
+          numbers="$(jq -c '[.[].number] | sort' .factory/explore/issues.json)"
           echo "Batch: $numbers"
           echo "numbers=$numbers" >> "$GITHUB_OUTPUT"
 
@@ -183,7 +183,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: explore-evidence
-          path: /tmp/evidence/*.png
+          path: .factory/evidence/*.png
           if-no-files-found: ignore
 
   apply:
@@ -210,7 +210,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: explore-evidence
-          path: /tmp/evidence
+          path: .factory/evidence
           merge-multiple: true
 
       - name: Check the plan
@@ -274,10 +274,10 @@ jobs:
 
             jq -r '.comment' <<< "$entry" > /tmp/comment.md
             printf '\n\n---\n\n_%s_ [Logs](%s)\n' "$next" "$RUN_URL" >> /tmp/comment.md
-            # This issue's screenshots, /tmp/evidence/<n>-*.png. --attach
+            # This issue's screenshots, .factory/evidence/<n>-*.png. --attach
             # uploads them and swaps each path in the comment for its URL.
             attach=()
-            for png in /tmp/evidence/"$n"-*.png; do attach+=(--attach "$png"); done
+            for png in .factory/evidence/"$n"-*.png; do attach+=(--attach "$png"); done
             gh issue comment "$n" --body-file /tmp/comment.md "${attach[@]}"
 
             # `agent:in-progress` comes off: this issue is done, and the

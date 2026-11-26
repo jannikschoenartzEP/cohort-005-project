@@ -168,6 +168,7 @@ jobs:
           # implementer most needs to see. The factory's status lines should
           # not ("Building", "run failed"), so every one of them carries a
           # hidden `<!-- factory:status -->` and is dropped here.
+          mkdir -p .factory
           gh issue view "$ISSUE_NUMBER" --json number,title,body,labels,comments \
             | jq '.comments |= map(select(
                 (.authorAssociation | IN("OWNER", "MEMBER", "COLLABORATOR"))
@@ -179,8 +180,8 @@ jobs:
                then "\n\n## Comments\n"
                  + ([.comments[] | "\n### " + .author.login + " (" + .createdAt + ")\n\n" + .body + "\n"] | join(""))
                else "" end)
-          ' /tmp/ticket.json > /tmp/ticket.md
-          cat /tmp/ticket.md
+          ' /tmp/ticket.json > .factory/ticket.md
+          cat .factory/ticket.md
 
       - name: Build the ticket
         env:
@@ -228,13 +229,13 @@ jobs:
           # `gh pr create` with it fails. This step runs nothing the agent
           # wrote: it reads the agent's summary as text and hands it to `gh`.
           # `--attach` uploads the agent's screenshots and swaps each matching
-          # /tmp/evidence path in the body for its URL. It needs a PAT too:
+          # .factory/evidence path in the body for its URL. It needs a PAT too:
           # GITHUB_TOKEN is rejected.
           GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: |
           set -euo pipefail
           title="$(gh issue view "$ISSUE_NUMBER" --json title --jq .title)"
-          body_file=/tmp/pr-body.md
+          body_file=.factory/pr-body.md
           [ -s "$body_file" ] || echo "Built by the implementer workflow." > "$body_file"
           {
             echo ""
@@ -247,7 +248,7 @@ jobs:
           # nullglob: no screenshots means no --attach, and the PR still opens.
           shopt -s nullglob
           attach=()
-          for png in /tmp/evidence/*.png; do attach+=(--attach "$png"); done
+          for png in .factory/evidence/*.png; do attach+=(--attach "$png"); done
 
           url="$(gh pr create \
             --draft \
