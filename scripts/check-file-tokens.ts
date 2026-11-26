@@ -6,6 +6,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
+import { relative, resolve } from "node:path";
 
 const MAX_TOKENS = 5000;
 const BYTES_PER_TOKEN = 4;
@@ -43,10 +44,20 @@ const ALLOWLIST = new Set([
 const estimateTokens = (path: string) =>
   Math.ceil(statSync(path).size / BYTES_PER_TOKEN);
 
-const trackedFiles = execFileSync("git", ["ls-files", "-z"], {
+// With file arguments (from lint-staged), check only those files.
+// Without, check every tracked file.
+const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], {
   encoding: "utf8",
-})
-  .split("\0")
+}).trim();
+const requestedFiles = process.argv.slice(2);
+const candidateFiles =
+  requestedFiles.length > 0
+    ? requestedFiles.map((path) => relative(repoRoot, resolve(path)))
+    : execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" }).split("\0");
+
+process.chdir(repoRoot);
+
+const trackedFiles = candidateFiles
   .filter(Boolean)
   .filter((path) => !IGNORED.some((pattern) => pattern.test(path)))
   .filter((path) => {
@@ -62,8 +73,8 @@ const tooLong = trackedFiles
   .map((path) => ({ path, tokens: estimateTokens(path) }))
   .filter(({ tokens }) => tokens > MAX_TOKENS);
 
-const nowShortEnough = [...ALLOWLIST].filter(
-  (path) => trackedFiles.includes(path) && estimateTokens(path) <= MAX_TOKENS
+const nowShortEnough = trackedFiles.filter(
+  (path) => ALLOWLIST.has(path) && estimateTokens(path) <= MAX_TOKENS
 );
 
 const exportCount = (path: string) =>
@@ -109,4 +120,4 @@ if (nowShortEnough.length > 0) {
 
 if (tooLong.length > 0 || nowShortEnough.length > 0) process.exit(1);
 
-console.log(`✔ All files are under ${MAX_TOKENS} tokens.`);
+console.log(`✔ All checked files are under ${MAX_TOKENS} tokens.`);

@@ -8,7 +8,7 @@ Do these checks in this order before you report a change to `app/` as complete:
 4. `npm run lint:boundaries`
 5. `npm run test`
 
-Or run all five with `npm run check`. The husky pre-commit hook runs `npm run check`.
+Or run all five with `npm run check`. CI runs it on every PR. The pre-commit hook only formats staged files, checks their token count and runs the tests related to them, so a passing commit does not mean `npm run check` passes.
 
 Modules are deep modules: see [app/modules/README.md](./app/modules/README.md) before adding or importing one.
 
