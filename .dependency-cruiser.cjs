@@ -94,6 +94,19 @@ module.exports = {
       from: { path: "^app/routes/instructor\\.analytics\\.tsx$" },
       to: { path: ["^app/db/", "^node_modules/(drizzle-orm|better-sqlite3)/"] },
     },
+    {
+      name: "components-no-db-connection",
+      comment:
+        "Components ship to the browser. Importing the database connection drags better-sqlite3 into the client bundle, where it throws on load and stops React from hydrating the page. Get data from a loader and pass it in as props. (The schema is fine to import.)",
+      severity: "error",
+      from: { path: "^app/components/" },
+      to: {
+        path: [
+          "^app/db/index\\.ts$",
+          "^node_modules/(better-sqlite3|drizzle-orm/better-sqlite3)/",
+        ],
+      },
+    },
   ],
   options: {
     doNotFollow: { path: "node_modules" },
