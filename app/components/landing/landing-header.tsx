@@ -1,32 +1,22 @@
 import { Link } from "react-router";
-import { useState, useEffect } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { useDarkMode } from "~/components/use-dark-mode";
 
 const navLinkClass =
   "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground";
 
 function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  function toggleDarkMode() {
-    const next = !isDark;
-    setIsDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    try {
-      localStorage.setItem("cadence-theme", next ? "dark" : "light");
-    } catch {}
-  }
+  const { isDark, toggleDarkMode } = useDarkMode();
+  const label = isDark ? "Switch to light mode" : "Switch to dark mode";
 
   return (
     <button
+      type="button"
       onClick={toggleDarkMode}
       className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={label}
+      aria-label={label}
     >
       {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
     </button>
