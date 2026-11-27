@@ -24,6 +24,18 @@ describe("NativeSelect", () => {
     );
   });
 
+  it("draws its own focus ring, so no caller has to", () => {
+    const view = render(<NativeSelect />);
+
+    expect(view.classesOf("select")).toEqual(
+      expect.arrayContaining([
+        "focus-visible:outline-none",
+        "focus-visible:ring-2",
+        "focus-visible:ring-ring",
+      ])
+    );
+  });
+
   it("draws a chevron inset from the right edge that never takes a click", () => {
     const view = render(<NativeSelect />);
 

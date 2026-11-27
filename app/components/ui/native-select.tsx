@@ -12,7 +12,7 @@ function NativeSelect({
     <div data-slot="native-select" className={cn("relative", wrapperClassName)}>
       <select
         className={cn(
-          "w-full appearance-none rounded-md border border-input bg-background pl-3 pr-9 text-sm",
+          "w-full appearance-none rounded-md border border-input bg-background pl-3 pr-9 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           className
         )}
         {...props}

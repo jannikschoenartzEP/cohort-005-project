@@ -421,7 +421,7 @@ export default function CourseCatalog({ loaderData }: Route.ComponentProps) {
         <NativeSelect
           name="category"
           defaultValue={category ?? ""}
-          className="h-10 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-10"
         >
           <option value="">All Categories</option>
           {categories.map((cat) => (
