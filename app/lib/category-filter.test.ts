@@ -3,7 +3,7 @@ import {
   ALL_CATEGORIES,
   categoryChoice,
   parseCategoryParam,
-} from "../category-filter";
+} from "./category-filter";
 
 describe("parseCategoryParam", () => {
   it("filters on the slug the dropdown sent", () => {

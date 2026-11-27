@@ -3,7 +3,7 @@ import {
   AUTO_DETECT_COUNTRY,
   devCountryChoice,
   parseDevCountry,
-} from "../dev-country";
+} from "./dev-country";
 
 describe("parseDevCountry", () => {
   it("keeps a two-letter country code", () => {
