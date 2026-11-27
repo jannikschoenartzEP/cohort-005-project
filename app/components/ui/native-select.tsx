@@ -3,13 +3,9 @@ import { ChevronDown } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 
-function NativeSelect({
-  className,
-  wrapperClassName,
-  ...props
-}: React.ComponentProps<"select"> & { wrapperClassName?: string }) {
+function NativeSelect({ className, ...props }: React.ComponentProps<"select">) {
   return (
-    <div data-slot="native-select" className={cn("relative", wrapperClassName)}>
+    <div data-slot="native-select" className="relative">
       <select
         className={cn(
           "w-full appearance-none rounded-md border border-input bg-background pl-3 pr-9 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

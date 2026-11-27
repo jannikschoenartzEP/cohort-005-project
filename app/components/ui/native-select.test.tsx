@@ -57,15 +57,12 @@ describe("NativeSelect", () => {
     expect(view.html).toMatch(/<option value="design" selected="">Design/);
   });
 
-  it("merges the caller's classes onto the select and the wrapper", () => {
-    const view = render(
-      <NativeSelect className="h-10 pr-12" wrapperClassName="w-40" />
-    );
+  it("merges the caller's classes onto the select", () => {
+    const view = render(<NativeSelect className="h-10 pr-12" />);
 
     expect(view.classesOf("select")).toEqual(
       expect.arrayContaining(["h-10", "pr-12"])
     );
     expect(view.classesOf("select")).not.toContain("pr-9");
-    expect(view.classesOf("div")).toEqual(["relative", "w-40"]);
   });
 });
