@@ -5,8 +5,9 @@ import { cn } from "~/lib/utils";
 
 function NativeSelect({ className, ...props }: React.ComponentProps<"select">) {
   return (
-    <div data-slot="native-select" className="relative">
+    <div className="relative">
       <select
+        data-slot="native-select"
         className={cn(
           "w-full appearance-none rounded-md border border-input bg-background pl-3 pr-9 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           className
