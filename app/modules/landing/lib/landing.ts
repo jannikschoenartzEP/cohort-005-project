@@ -10,11 +10,6 @@ import {
   users,
 } from "~/db/schema";
 
-// ─── Landing ───
-// What the landing page shows: one spotlighted course with its outline, the
-// next few courses as cards, and a handful of catalogue-wide figures. Only
-// published courses count anywhere on the page.
-
 export type Db = BetterSQLite3Database<typeof schema>;
 
 const FEATURED_COUNT = 3;
