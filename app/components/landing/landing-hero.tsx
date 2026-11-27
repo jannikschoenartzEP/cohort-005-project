@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { plural } from "~/lib/utils";
+import { cn, plural } from "~/lib/utils";
 import type { CatalogueStats, SpotlightCourse } from "~/modules/landing";
 import { SpotlightCard } from "./spotlight-card";
 
@@ -45,6 +45,16 @@ function HeroActions({ signedIn }: { signedIn: boolean }) {
   );
 }
 
+function CatalogueBadge({ stats }: { stats: CatalogueStats }) {
+  return (
+    <p className="mb-6 flex w-fit items-center gap-2 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground">
+      <span className="size-1.5 rounded-full bg-primary" />
+      {plural(stats.courses, "course", "courses")} from{" "}
+      {plural(stats.instructors, "instructor", "instructors")}
+    </p>
+  );
+}
+
 export function LandingHero({
   stats,
   spotlight,
@@ -60,14 +70,15 @@ export function LandingHero({
         aria-hidden
         className="pointer-events-none absolute -top-40 -right-40 size-[36rem] rounded-full bg-primary/5 blur-3xl"
       />
-      <div className="relative mx-auto grid max-w-6xl items-center gap-16 px-6 py-20 lg:grid-cols-[1.1fr_1fr] lg:py-28">
+      <div
+        className={cn(
+          "relative mx-auto grid max-w-6xl items-center gap-16 px-6 py-20 lg:py-28",
+          spotlight && "lg:grid-cols-[1.1fr_1fr]"
+        )}
+      >
         <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-primary" />
-            {plural(stats.courses, "course", "courses")} from{" "}
-            {plural(stats.instructors, "instructor", "instructors")}
-          </p>
-          <h1 className="mt-6 text-5xl font-bold tracking-tight sm:text-6xl">
+          {stats.courses > 0 && <CatalogueBadge stats={stats} />}
+          <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
             Learn to code,
             <br />
             <span className="text-muted-foreground">at your own pace</span>
