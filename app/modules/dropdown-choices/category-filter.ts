@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ALL_CATEGORIES = "all";
+export const ALL_CATEGORIES = "_all";
 
 const categoryParamSchema = z
   .string()

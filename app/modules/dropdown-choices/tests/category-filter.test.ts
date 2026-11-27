@@ -10,6 +10,10 @@ describe("parseCategoryParam", () => {
     expect(parseCategoryParam("design")).toBe("design");
   });
 
+  it("filters on a category an admin named All", () => {
+    expect(parseCategoryParam("all")).toBe("all");
+  });
+
   it("reads the All Categories choice as no filter", () => {
     expect(parseCategoryParam(ALL_CATEGORIES)).toBeNull();
   });
