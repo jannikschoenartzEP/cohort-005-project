@@ -5,6 +5,7 @@ import type { Route } from "./+types/team";
 import { people } from "~/modules/permissions/person.server";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
+import { NativeSelect } from "~/components/ui/native-select";
 import { Textarea } from "~/components/ui/textarea";
 import { BookOpen, Copy, Check, AlertTriangle } from "lucide-react";
 import { data, isRouteErrorResponse } from "react-router";
@@ -272,7 +273,7 @@ export default function Team({ loaderData }: Route.ComponentProps) {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Coupons</h2>
           {courseStats.length > 1 && (
-            <select
+            <NativeSelect
               value={courseFilter}
               onChange={(event) =>
                 setCourseFilter(
@@ -281,7 +282,7 @@ export default function Team({ loaderData }: Route.ComponentProps) {
                     : Number(event.target.value)
                 )
               }
-              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm"
+              className="py-1.5"
             >
               <option value="all">All courses</option>
               {courseStats.map((stat) => (
@@ -289,7 +290,7 @@ export default function Team({ loaderData }: Route.ComponentProps) {
                   {stat.courseTitle}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           )}
         </div>
 
