@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Form, useLocation } from "react-router";
+import { Form, useLocation, useSubmit } from "react-router";
 import { Button } from "~/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { AUTO_DETECT_COUNTRY, devCountryChoice } from "~/lib/dev-country";
 import { FeedbackButton } from "~/components/feedback-button";
 import { cn } from "~/lib/utils";
 import type { UserRole } from "~/db/schema";
@@ -52,6 +60,7 @@ export function DevUI({
   const [open, setOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const submit = useSubmit();
 
   useEffect(() => {
     if (!open) return;
@@ -158,24 +167,35 @@ export function DevUI({
             <Globe className="size-3" />
             PPP Country
           </div>
-          <Form
-            method="post"
-            action={`/api/set-dev-country?redirectTo=${encodeURIComponent(location.pathname + location.search)}`}
+          <Select
+            key={devCountryChoice(devCountry)}
+            defaultValue={devCountryChoice(devCountry)}
+            onValueChange={(country) =>
+              submit(
+                { country },
+                {
+                  method: "post",
+                  action: `/api/set-dev-country?redirectTo=${encodeURIComponent(location.pathname + location.search)}`,
+                }
+              )
+            }
           >
-            <select
-              name="country"
-              defaultValue={devCountry ?? ""}
-              onChange={(event) => event.target.form?.requestSubmit()}
-              className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+            <SelectTrigger
+              size="sm"
+              className="w-full"
+              aria-label="PPP Country"
             >
-              <option value="">Auto-detect</option>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" side="top" className="max-h-64">
+              <SelectItem value={AUTO_DETECT_COUNTRY}>Auto-detect</SelectItem>
               {countries.map((c) => (
-                <option key={c.code} value={c.code}>
+                <SelectItem key={c.code} value={c.code}>
                   {c.name} ({c.code})
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </Form>
+            </SelectContent>
+          </Select>
           {devCountry && (
             <div className="mt-1.5 text-xs text-muted-foreground">
               Tier {countryTierInfo.tier} — {countryTierInfo.label}
