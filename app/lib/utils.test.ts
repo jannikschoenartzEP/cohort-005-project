@@ -1,5 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { daysSince, formatRelativeTime } from "./utils";
+import { daysSince, formatRelativeTime, plural } from "./utils";
+
+describe("plural", () => {
+  it("uses the singular noun for exactly one", () => {
+    expect(plural(1, "lesson", "lessons")).toBe("1 lesson");
+  });
+
+  it("uses the plural noun for zero and for more than one", () => {
+    expect(plural(0, "lesson", "lessons")).toBe("0 lessons");
+    expect(plural(2, "lesson", "lessons")).toBe("2 lessons");
+  });
+});
 
 describe("formatRelativeTime", () => {
   beforeEach(() => {

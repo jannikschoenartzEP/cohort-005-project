@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { ArrowRight, User } from "lucide-react";
 import { CourseImage } from "~/components/course-image";
+import { plural } from "~/lib/utils";
 import type { SpotlightCourse } from "~/modules/landing";
 
 function CourseOutline({ outline }: { outline: string[] }) {
@@ -54,7 +55,8 @@ export function SpotlightCard({ course }: { course: SpotlightCourse }) {
           <CourseOutline outline={course.outline} />
           <div className="mt-6 flex items-center justify-between border-t border-border pt-4 text-sm">
             <span className="text-muted-foreground">
-              {course.moduleCount} modules · {course.lessonCount} lessons
+              {plural(course.moduleCount, "module", "modules")} ·{" "}
+              {plural(course.lessonCount, "lesson", "lessons")}
             </span>
             <span className="flex items-center gap-1 font-medium">
               View course

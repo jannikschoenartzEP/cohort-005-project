@@ -1,12 +1,9 @@
 import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { plural } from "~/lib/utils";
 import type { CatalogueStats, SpotlightCourse } from "~/modules/landing";
 import { SpotlightCard } from "./spotlight-card";
-
-function plural(count: number, one: string, many: string) {
-  return `${count} ${count === 1 ? one : many}`;
-}
 
 function HeroStats({ stats }: { stats: CatalogueStats }) {
   const figures = [

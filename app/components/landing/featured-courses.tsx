@@ -8,6 +8,7 @@ import {
   CardHeader,
 } from "~/components/ui/card";
 import { CourseImage } from "~/components/course-image";
+import { plural } from "~/lib/utils";
 import type { LandingCourse } from "~/modules/landing";
 
 function FeaturedCourseCard({ course }: { course: LandingCourse }) {
@@ -39,7 +40,7 @@ function FeaturedCourseCard({ course }: { course: LandingCourse }) {
           </span>
           <span className="flex items-center gap-1">
             <BookOpen className="size-3" />
-            {course.lessonCount} lessons
+            {plural(course.lessonCount, "lesson", "lessons")}
           </span>
         </CardFooter>
       </Card>
