@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ALL_CATEGORIES, categoryChoice, parseCategoryParam } from "../index";
+import {
+  ALL_CATEGORIES,
+  categoryChoice,
+  parseCategoryParam,
+} from "../category-filter";
 
 describe("parseCategoryParam", () => {
   it("filters on the slug the dropdown sent", () => {

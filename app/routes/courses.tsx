@@ -32,7 +32,7 @@ import {
   ALL_CATEGORIES,
   categoryChoice,
   parseCategoryParam,
-} from "~/modules/dropdown-choices";
+} from "~/modules/dropdown-choices/category-filter";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle, BookOpen, Search } from "lucide-react";
 import { CourseImage } from "~/components/course-image";

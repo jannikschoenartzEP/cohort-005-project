@@ -1,7 +1,7 @@
 import { redirect } from "react-router";
 import type { Route } from "./+types/api.set-dev-country";
 import { setDevCountry } from "~/lib/session";
-import { parseDevCountry } from "~/modules/dropdown-choices";
+import { parseDevCountry } from "~/modules/dropdown-choices/dev-country";
 
 export async function action({ request, url }: Route.ActionArgs) {
   const formData = await request.formData();

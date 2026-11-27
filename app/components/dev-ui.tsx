@@ -11,7 +11,7 @@ import {
 import {
   AUTO_DETECT_COUNTRY,
   devCountryChoice,
-} from "~/modules/dropdown-choices";
+} from "~/modules/dropdown-choices/dev-country";
 import { FeedbackButton } from "~/components/feedback-button";
 import { cn } from "~/lib/utils";
 import type { UserRole } from "~/db/schema";
