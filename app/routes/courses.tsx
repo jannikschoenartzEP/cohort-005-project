@@ -21,6 +21,7 @@ import {
   CardHeader,
 } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
+import { NativeSelect } from "~/components/ui/native-select";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle, BookOpen, Search } from "lucide-react";
 import { CourseImage } from "~/components/course-image";
@@ -417,10 +418,10 @@ export default function CourseCatalog({ loaderData }: Route.ComponentProps) {
             className="h-10 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
-        <select
+        <NativeSelect
           name="category"
           defaultValue={category ?? ""}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-10 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="">All Categories</option>
           {categories.map((cat) => (
@@ -428,7 +429,7 @@ export default function CourseCatalog({ loaderData }: Route.ComponentProps) {
               {cat.name}
             </option>
           ))}
-        </select>
+        </NativeSelect>
         <Button type="submit">Search</Button>
       </Form>
 
