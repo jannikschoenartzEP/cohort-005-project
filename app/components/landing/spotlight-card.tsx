@@ -2,18 +2,18 @@ import { Link } from "react-router";
 import { ArrowRight, User } from "lucide-react";
 import { CourseImage } from "~/components/course-image";
 import { plural } from "~/lib/utils";
-import type { SpotlightCourse } from "~/modules/landing";
+import type { OutlineModule, SpotlightCourse } from "~/modules/landing";
 
-function CourseOutline({ outline }: { outline: string[] }) {
+function CourseOutline({ outline }: { outline: OutlineModule[] }) {
   if (outline.length === 0) return null;
   return (
     <ol className="mt-5 space-y-2">
-      {outline.map((title, index) => (
-        <li key={title} className="flex items-center gap-3 text-sm">
+      {outline.map((module, index) => (
+        <li key={module.id} className="flex items-center gap-3 text-sm">
           <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
             {index + 1}
           </span>
-          <span className="truncate">{title}</span>
+          <span className="truncate">{module.title}</span>
         </li>
       ))}
     </ol>

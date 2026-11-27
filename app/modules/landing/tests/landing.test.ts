@@ -145,9 +145,13 @@ describe("landing", () => {
     });
     const names = ["Intro", "Inputs", "Validation", "Submitting", "Wrap-up"];
     // Added out of order so the outline has to follow position, not id.
-    for (const [index, name] of [...names.entries()].reverse()) {
-      addLessons(addModule(course.id, name, index + 1).id, 2);
-    }
+    const added = [...names.entries()].reverse().map(([index, name]) => {
+      const module = addModule(course.id, name, index + 1);
+      addLessons(module.id, 2);
+      return module;
+    });
+    const idOf = (name: string) =>
+      added.find((module) => module.title === name)?.id;
 
     expect(landing().spotlight).toEqual({
       id: course.id,
@@ -159,7 +163,10 @@ describe("landing", () => {
       categoryName: "Web",
       lessonCount: 10,
       moduleCount: 5,
-      outline: ["Intro", "Inputs", "Validation", "Submitting"],
+      outline: ["Intro", "Inputs", "Validation", "Submitting"].map((title) => ({
+        id: idOf(title),
+        title,
+      })),
     });
   });
 

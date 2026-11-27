@@ -33,8 +33,10 @@ export type LandingCourse = {
 
 export type SpotlightCourse = LandingCourse & {
   moduleCount: number;
-  outline: string[];
+  outline: OutlineModule[];
 };
+
+export type OutlineModule = { id: number; title: string };
 
 export type CatalogueStats = {
   courses: number;
@@ -82,14 +84,13 @@ function lessonCounts(db: Db, courseIds: number[]) {
   return new Map(rows.map((row) => [row.courseId, row.lessons]));
 }
 
-function courseOutline(db: Db, courseId: number) {
+function courseOutline(db: Db, courseId: number): OutlineModule[] {
   return db
-    .select({ title: modules.title })
+    .select({ id: modules.id, title: modules.title })
     .from(modules)
     .where(eq(modules.courseId, courseId))
     .orderBy(modules.position, modules.id)
-    .all()
-    .map((row) => row.title);
+    .all();
 }
 
 function catalogueStats(db: Db): CatalogueStats {

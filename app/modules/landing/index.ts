@@ -4,5 +4,6 @@ export type {
   CatalogueStats,
   Landing,
   LandingCourse,
+  OutlineModule,
   SpotlightCourse,
 } from "./lib/landing";
