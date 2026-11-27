@@ -21,7 +21,18 @@ import {
   CardHeader,
 } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { NativeSelect } from "~/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  ALL_CATEGORIES,
+  categoryChoice,
+  parseCategoryParam,
+} from "~/modules/dropdown-choices";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle, BookOpen, Search } from "lucide-react";
 import { CourseImage } from "~/components/course-image";
@@ -285,7 +296,7 @@ export function meta() {
 
 export async function loader({ request, url }: Route.LoaderArgs) {
   const search = url.searchParams.get("q");
-  const category = url.searchParams.get("category");
+  const category = parseCategoryParam(url.searchParams.get("category"));
 
   const courses = buildCourseQuery(
     search,
@@ -418,18 +429,26 @@ export default function CourseCatalog({ loaderData }: Route.ComponentProps) {
             className="h-10 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
-        <NativeSelect
+        <Select
+          key={categoryChoice(category)}
           name="category"
-          defaultValue={category ?? ""}
-          className="h-10"
+          defaultValue={categoryChoice(category)}
         >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.slug}>
-              {cat.name}
-            </option>
-          ))}
-        </NativeSelect>
+          <SelectTrigger
+            aria-label="Category"
+            className="data-[size=default]:h-10 w-full sm:w-44"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_CATEGORIES}>All Categories</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.slug}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button type="submit">Search</Button>
       </Form>
 
